@@ -11,6 +11,7 @@ UU跑腿开放平台 CLI 工具 —— 为 AI 智能体提供同城即时配送�
 - **cancel** — 取消订单
 - **track** — 跑男实时追踪
 - **update** — 检查并更新到最新版本
+- **uninstall** — 卸载 uupt-open-cli
 
 ## 安装
 
@@ -82,6 +83,18 @@ irm https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/instal
 ```
 
 安装脚本会自动检测已有安装，仅替换二进制文件，保留 `configs/config.json` 和 `logs/`。
+
+## 卸载
+
+```bash
+uupt-open-cli uninstall
+```
+
+将删除 `~/.uupt-open-cli/` 目录（含二进制、配置、日志）并移除 PATH 配置。使用 `-y` 跳过确认：
+
+```bash
+uupt-open-cli uninstall -y
+```
 
 ## 配置
 
