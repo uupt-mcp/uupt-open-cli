@@ -41,7 +41,7 @@ function Get-TargetVersion {
 function Download-Release {
     param([string]$Version)
 
-    $filename = "uupt-open-cli-$Version-windows-amd64.tar.gz"
+    $filename = "uupt-open-cli-$Version-windows-amd64.zip"
     $url = "$BaseUrl/v$Version/$filename"
     $dest = "$DownloadDir\$filename"
 
@@ -68,7 +68,8 @@ function Install-Release {
     New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
 
     Write-Info "解压文件..."
-    tar -xzf $ArchivePath -C $tmpDir
+    # 使用 Expand-Archive 解压 .zip
+    Expand-Archive -Path $ArchivePath -DestinationPath $tmpDir -Force
 
     # 查找二进制文件
     $binary = Get-ChildItem -Path $tmpDir -Filter "uupt-open-cli*.exe" -Recurse | Select-Object -First 1

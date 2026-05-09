@@ -30,6 +30,10 @@ archives:
     name_template: "uupt-open-cli-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
     files:
       - configs/defaults.json
+      - src: scripts/install.sh
+        dst: install.sh
+      - src: scripts/install.ps1
+        dst: install.ps1
 
 checksum:
   name_template: 'checksums.txt'
