@@ -15,16 +15,77 @@ UU跑腿开放平台 CLI 工具 —— 为 AI 智能体提供同城即时配送�
 
 ## 安装
 
-### macOS / Linux
+### 方式一：一键安装脚本（推荐）
+
+#### macOS / Linux
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install.sh | bash
 ```
 
-### Windows
+#### Windows
 
 ```powershell
 irm https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install.ps1 | iex
+```
+
+### 方式二：手动下载安装
+
+从 [Releases 页面](https://github.com/uupt-mcp/uupt-open-cli/releases) 下载对应平台的压缩包：
+
+#### macOS
+
+```bash
+# Apple Silicon (M1/M2/M3)
+curl -LO https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.0.0-macos-arm64.tar.gz
+tar -xzf uupt-open-cli-1.0.0-macos-arm64.tar.gz
+
+# Intel
+curl -LO https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.0.0-macos-amd64.tar.gz
+tar -xzf uupt-open-cli-1.0.0-macos-amd64.tar.gz
+```
+
+#### Linux
+
+```bash
+# ARM64
+curl -LO https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.0.0-linux-arm64.tar.gz
+tar -xzf uupt-open-cli-1.0.0-linux-arm64.tar.gz
+
+# AMD64
+curl -LO https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.0.0-linux-amd64.tar.gz
+tar -xzf uupt-open-cli-1.0.0-linux-amd64.tar.gz
+```
+
+#### Windows
+
+下载 [uupt-open-cli-1.0.0-windows-amd64.zip](https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.0.0-windows-amd64.zip) 并解压。
+
+> **注意：** 请将上述链接中的 `1.0.0` 替换为 [Releases 页面](https://github.com/uupt-mcp/uupt-open-cli/releases) 中的最新版本号。
+
+解压后，将二进制文件移动到安装目录并配置 PATH：
+
+**macOS / Linux：**
+
+```bash
+mkdir -p ~/.uupt-open-cli/configs ~/.uupt-open-cli/logs
+mv uupt-open-cli ~/.uupt-open-cli/
+chmod +x ~/.uupt-open-cli/uupt-open-cli
+
+# 添加到 PATH（选择对应 shell 配置文件）
+echo 'export PATH="$HOME/.uupt-open-cli:$PATH"' >> ~/.bashrc   # bash
+echo 'export PATH="$HOME/.uupt-open-cli:$PATH"' >> ~/.zshrc   # zsh
+source ~/.bashrc  # 或 source ~/.zshrc
+```
+
+**Windows（PowerShell）：**
+
+```powershell
+mkdir "$env:USERPROFILE\.uupt-open-cli\configs" -Force
+mkdir "$env:USERPROFILE\.uupt-open-cli\logs" -Force
+Move-Item uupt-open-cli.exe "$env:USERPROFILE\.uupt-open-cli\"
+$installDir = "$env:USERPROFILE\.uupt-open-cli"
+[Environment]::SetEnvironmentVariable("PATH", "$installDir;" + [Environment]::GetEnvironmentVariable("PATH", "User"), "User")
 ```
 
 ## 使用
