@@ -140,6 +140,7 @@ func removeInstallDir(installDir string) {
 }
 
 // removeInstallDirSelfWindows 处理 Windows 下从安装目录运行时的删除
+// 通过启动后台 PowerShell 进程，在当前进程退出后自动删除安装目录
 func removeInstallDirSelfWindows(installDir string) {
 	exe, err := os.Executable()
 	if err != nil {
@@ -168,11 +169,43 @@ func removeInstallDirSelfWindows(installDir string) {
 		os.RemoveAll(entryPath)
 	}
 
-	// 尝试删除安装目录本身（如果二进制是唯一剩余文件则会失败，这是预期的）
-	os.Remove(installDir)
+	// 创建临时清理脚本，在当前进程退出后自动删除安装目录
+	pid := os.Getpid()
+	tmpScript := filepath.Join(os.TempDir(), fmt.Sprintf("uupt-cleanup-%d.ps1", pid))
+	scriptContent := fmt.Sprintf(
+		"$p = Get-Process -Id %d -ErrorAction SilentlyContinue\nif ($p) { Wait-Process -Id %d -ErrorAction SilentlyContinue }\nRemove-Item -Recurse -Force -LiteralPath '%s' -ErrorAction SilentlyContinue\nRemove-Item -Force -LiteralPath '%s' -ErrorAction SilentlyContinue\n",
+		pid, pid,
+		strings.ReplaceAll(installDir, "'", "''"),
+		strings.ReplaceAll(tmpScript, "'", "''"),
+	)
 
-	fmt.Println("[WARN] 当前正在从安装目录运行，无法删除正在使用的二进制文件")
-	fmt.Printf("[提示] 请关闭终端后手动删除: %s\n", installDir)
+	if err := os.WriteFile(tmpScript, []byte(scriptContent), 0644); err != nil {
+		fmt.Println("[WARN] 当前正在从安装目录运行，无法删除正在使用的二进制文件")
+		fmt.Printf("[提示] 请关闭终端后手动删除: %s\n", installDir)
+		return
+	}
+
+	psExe := "pwsh"
+	if _, err := exec.LookPath("pwsh"); err != nil {
+		psExe = "powershell"
+	}
+
+	cmd := exec.Command(psExe, "-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-File", tmpScript)
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	cmd.Stdin = nil
+
+	if err := cmd.Start(); err != nil {
+		os.Remove(tmpScript) // 清理临时文件
+		fmt.Println("[WARN] 当前正在从安装目录运行，无法删除正在使用的二进制文件")
+		fmt.Printf("[提示] 请关闭终端后手动删除: %s\n", installDir)
+		return
+	}
+
+	// 释放子进程，使其独立运行
+	cmd.Process.Release()
+
+	fmt.Println("[INFO] 已安排在进程退出后自动清理安装目录")
 }
 
 func removeFromPath(installDir string) {
