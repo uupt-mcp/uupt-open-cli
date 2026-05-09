@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"uupt-open-cli/internal/config"
 )
 
 type Level int
@@ -27,7 +29,7 @@ var (
 )
 
 func Init() {
-	logDir = filepath.Join(getHomeDir(), "logs")
+	logDir = filepath.Join(config.GetHomeDir(), "logs")
 	os.MkdirAll(logDir, 0755)
 
 	// Set log level from environment
@@ -48,16 +50,6 @@ func Init() {
 
 	// Open today's log file
 	openLogFile()
-}
-
-func getHomeDir() string {
-	var home string
-	if os.Getenv("USERPROFILE") != "" {
-		home = os.Getenv("USERPROFILE")
-	} else {
-		home = os.Getenv("HOME")
-	}
-	return filepath.Join(home, ".uupt-open-cli")
 }
 
 func cleanOldLogs() {

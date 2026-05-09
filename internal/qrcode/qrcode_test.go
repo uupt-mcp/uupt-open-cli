@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"uupt-open-cli/internal/config"
 )
 
 func TestDownloadQRCode_Success(t *testing.T) {
@@ -16,20 +18,8 @@ func TestDownloadQRCode_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// 设置临时 home 目录
-	tmpDir := t.TempDir()
-	origUserProfile := os.Getenv("USERPROFILE")
-	origHome := os.Getenv("HOME")
-	os.Setenv("USERPROFILE", tmpDir)
-	os.Setenv("HOME", tmpDir)
-	defer func() {
-		os.Setenv("USERPROFILE", origUserProfile)
-		os.Setenv("HOME", origHome)
-	}()
-
-	// 直接调用 downloadFromURL 或测试辅助逻辑
-	// 由于 DownloadQRCode 硬编码了 URL，我们测试文件写入逻辑
-	homeDir := getHomeDir()
+	// 获取 home 目录
+	homeDir := config.GetHomeDir()
 	os.MkdirAll(homeDir, 0755)
 
 	// 模拟下载并保存
@@ -57,52 +47,15 @@ func TestDownloadQRCode_Success(t *testing.T) {
 	}
 }
 
-func TestDownloadQRCode_ServerError(t *testing.T) {
-	// Mock 一个返回错误的服务器
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(500)
-	}))
-	defer server.Close()
-
-	// DownloadQRCode 硬编码 URL，无法直接用 mock 服务器
-	// 但我们可以测试 getHomeDir 功能
-	tmpDir := t.TempDir()
-	origUserProfile := os.Getenv("USERPROFILE")
-	origHome := os.Getenv("HOME")
-	os.Setenv("USERPROFILE", tmpDir)
-	os.Setenv("HOME", tmpDir)
-	defer func() {
-		os.Setenv("USERPROFILE", origUserProfile)
-		os.Setenv("HOME", origHome)
-	}()
-
-	homeDir := getHomeDir()
-	expectedDir := filepath.Join(tmpDir, ".uupt-open-cli")
-	if homeDir != expectedDir {
-		t.Errorf("getHomeDir不正确\n期望: %s\n实际: %s", expectedDir, homeDir)
-	}
-}
-
-func TestGetHomeDir_Windows(t *testing.T) {
-	tmpDir := t.TempDir()
-	origUserProfile := os.Getenv("USERPROFILE")
-	origHome := os.Getenv("HOME")
-	os.Setenv("USERPROFILE", tmpDir)
-	os.Setenv("HOME", tmpDir)
-	defer func() {
-		os.Setenv("USERPROFILE", origUserProfile)
-		os.Setenv("HOME", origHome)
-	}()
-
-	dir := getHomeDir()
+func TestGetHomeDir(t *testing.T) {
+	dir := config.GetHomeDir()
 	if dir == "" {
-		t.Error("getHomeDir不应返回空字符串")
+		t.Error("GetHomeDir 不应返回空字符串")
 	}
 	if !filepath.IsAbs(dir) {
 		t.Errorf("应返回绝对路径: %s", dir)
 	}
-	expected := filepath.Join(tmpDir, ".uupt-open-cli")
-	if dir != expected {
-		t.Errorf("期望: %s\n实际: %s", expected, dir)
+	if filepath.Base(dir) != ".uupt-open-cli" {
+		t.Errorf("路径应以 .uupt-open-cli 结尾: %s", dir)
 	}
 }

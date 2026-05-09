@@ -6,9 +6,9 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"runtime"
 	"time"
 
+	"uupt-open-cli/internal/config"
 	"uupt-open-cli/internal/logger"
 )
 
@@ -31,7 +31,7 @@ func DownloadQRCode(paymentUrl string) string {
 		return ""
 	}
 
-	homeDir := getHomeDir()
+	homeDir := config.GetHomeDir()
 	savePath := filepath.Join(homeDir, "payment_qrcode.png")
 
 	if err := os.MkdirAll(homeDir, 0755); err != nil {
@@ -45,14 +45,4 @@ func DownloadQRCode(paymentUrl string) string {
 	}
 
 	return savePath
-}
-
-func getHomeDir() string {
-	var home string
-	if runtime.GOOS == "windows" {
-		home = os.Getenv("USERPROFILE")
-	} else {
-		home = os.Getenv("HOME")
-	}
-	return filepath.Join(home, ".uupt-open-cli")
 }

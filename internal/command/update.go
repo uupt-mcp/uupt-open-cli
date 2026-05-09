@@ -1,12 +1,14 @@
 package command
 
 import (
+	"archive/tar"
+	"archive/zip"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -128,14 +130,24 @@ func selfUpdate(version string) error {
 	// 查找解压后的二进制文件
 	newBinary := filepath.Join(tmpDir, binaryName)
 	if _, err := os.Stat(newBinary); os.IsNotExist(err) {
-		// 可能在子目录中
-		matches, _ := filepath.Glob(filepath.Join(tmpDir, "**", "uupt-open-cli*"))
-		for _, m := range matches {
-			if !strings.HasSuffix(m, ".json") && !strings.HasSuffix(m, ".tar.gz") && !strings.HasSuffix(m, ".zip") {
-				newBinary = m
-				break
+		// 在子目录中递归查找
+		filepath.WalkDir(tmpDir, func(path string, d os.DirEntry, err error) error {
+			if err != nil {
+				return nil
 			}
-		}
+			if d.IsDir() {
+				return nil
+			}
+			base := filepath.Base(path)
+			if strings.HasPrefix(base, "uupt-open-cli") &&
+				!strings.HasSuffix(path, ".json") &&
+				!strings.HasSuffix(path, ".tar.gz") &&
+				!strings.HasSuffix(path, ".zip") {
+				newBinary = path
+				return filepath.SkipAll
+			}
+			return nil
+		})
 	}
 
 	if _, err := os.Stat(newBinary); os.IsNotExist(err) {
@@ -228,13 +240,105 @@ func downloadFile(url, dest string) error {
 
 func extractArchive(archivePath, destDir, archiveExt string) error {
 	if archiveExt == "zip" {
-		// 使用系统 tar 解压 zip（Windows 10+ 自带 tar 支持 zip）
-		cmd := exec.Command("tar", "-xf", archivePath, "-C", destDir)
-		return cmd.Run()
+		return extractZip(archivePath, destDir)
 	}
-	// tar.gz
-	cmd := exec.Command("tar", "-xzf", archivePath, "-C", destDir)
-	return cmd.Run()
+	return extractTarGz(archivePath, destDir)
+}
+
+func extractZip(src, dest string) error {
+	r, err := zip.OpenReader(src)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	for _, f := range r.File {
+		fpath := filepath.Join(dest, f.Name)
+
+		// 安全检查：防止 zip slip 路径遍历
+		if !strings.HasPrefix(filepath.Clean(fpath), filepath.Clean(dest)+string(os.PathSeparator)) {
+			return fmt.Errorf("非法的文件路径: %s", f.Name)
+		}
+
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(fpath, 0755)
+			continue
+		}
+
+		if err := os.MkdirAll(filepath.Dir(fpath), 0755); err != nil {
+			return err
+		}
+
+		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		if err != nil {
+			return err
+		}
+
+		rc, err := f.Open()
+		if err != nil {
+			outFile.Close()
+			return err
+		}
+
+		_, err = io.Copy(outFile, rc)
+		outFile.Close()
+		rc.Close()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func extractTarGz(src, dest string) error {
+	f, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	gzr, err := gzip.NewReader(f)
+	if err != nil {
+		return err
+	}
+	defer gzr.Close()
+
+	tr := tar.NewReader(gzr)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		fpath := filepath.Join(dest, hdr.Name)
+
+		// 安全检查：防止 tar slip 路径遍历
+		if !strings.HasPrefix(filepath.Clean(fpath), filepath.Clean(dest)+string(os.PathSeparator)) {
+			return fmt.Errorf("非法的文件路径: %s", hdr.Name)
+		}
+
+		switch hdr.Typeflag {
+		case tar.TypeDir:
+			os.MkdirAll(fpath, 0755)
+		case tar.TypeReg:
+			if err := os.MkdirAll(filepath.Dir(fpath), 0755); err != nil {
+				return err
+			}
+			outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.FileMode(hdr.Mode))
+			if err != nil {
+				return err
+			}
+			if _, err := io.Copy(outFile, tr); err != nil {
+				outFile.Close()
+				return err
+			}
+			outFile.Close()
+		}
+	}
+	return nil
 }
 
 func copyFile(src, dst string) error {

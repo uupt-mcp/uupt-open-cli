@@ -54,7 +54,11 @@ for PLATFORM in "${PLATFORMS[@]}"; do
     ./cmd/uupt-open-cli
 
   # 打包
-  ARCHIVE_NAME="uupt-open-cli-${VERSION}-${PLATFORM_NAME}-${GOARCH}.tar.gz"
+  if [ "${GOOS}" = "windows" ]; then
+    ARCHIVE_NAME="uupt-open-cli-${VERSION}-${PLATFORM_NAME}-${GOARCH}.zip"
+  else
+    ARCHIVE_NAME="uupt-open-cli-${VERSION}-${PLATFORM_NAME}-${GOARCH}.tar.gz"
+  fi
   STAGING_DIR="${DIST_DIR}/staging-${PLATFORM_NAME}-${GOARCH}"
   mkdir -p "${STAGING_DIR}/configs"
 
@@ -62,8 +66,13 @@ for PLATFORM in "${PLATFORMS[@]}"; do
   cp "${DIST_DIR}/${BINARY_NAME}" "${STAGING_DIR}/"
   cp "configs/defaults.json" "${STAGING_DIR}/configs/"
 
-  # 创建 tar.gz
-  tar -czf "${DIST_DIR}/${ARCHIVE_NAME}" -C "${STAGING_DIR}" .
+  # 创建压缩包
+  if [ "${GOOS}" = "windows" ]; then
+    # Windows 使用 zip 格式（与 goreleaser 一致）
+    (cd "${STAGING_DIR}" && zip -r "${OLDPWD}/${DIST_DIR}/${ARCHIVE_NAME}" . )
+  else
+    tar -czf "${DIST_DIR}/${ARCHIVE_NAME}" -C "${STAGING_DIR}" .
+  fi
 
   # 清理暂存目录
   rm -rf "${STAGING_DIR}"
@@ -74,4 +83,4 @@ done
 echo ""
 echo "=== 构建完成 ==="
 echo "输出目录: ${DIST_DIR}/"
-ls -lh "${DIST_DIR}"/*.tar.gz
+ls -lh "${DIST_DIR}"/*.tar.gz "${DIST_DIR}"/*.zip 2>/dev/null

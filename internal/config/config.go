@@ -17,11 +17,14 @@ type Config struct {
 }
 
 func GetHomeDir() string {
-	var home string
-	if runtime.GOOS == "windows" {
-		home = os.Getenv("USERPROFILE")
-	} else {
-		home = os.Getenv("HOME")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		// 降级：手动获取
+		if runtime.GOOS == "windows" {
+			home = os.Getenv("USERPROFILE")
+		} else {
+			home = os.Getenv("HOME")
+		}
 	}
 	return filepath.Join(home, ".uupt-open-cli")
 }

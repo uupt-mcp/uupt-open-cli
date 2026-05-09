@@ -37,11 +37,21 @@ function Get-TargetVersion {
     }
 }
 
+# 架构检测
+function Get-TargetArch {
+    $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
+    if ($arch -eq 'Arm64') {
+        # 当前 goreleaser 不发布 windows/arm64，提示用户
+        Write-Err "Windows ARM64 暂不支持，请使用 amd64 版本"
+    }
+    return "amd64"
+}
+
 # 下载
 function Download-Release {
-    param([string]$Version)
+    param([string]$Version, [string]$Arch)
 
-    $filename = "uupt-open-cli-$Version-windows-amd64.zip"
+    $filename = "uupt-open-cli-$Version-windows-$Arch.zip"
     $url = "$BaseUrl/v$Version/$filename"
     $dest = "$DownloadDir\$filename"
 
@@ -148,9 +158,10 @@ function Main {
     Write-Host ""
 
     $version = Get-TargetVersion -RequestedVersion $RequestedVersion
-    Write-Info "平台: windows/amd64"
+    $arch = Get-TargetArch
+    Write-Info "平台: windows/$arch"
 
-    $archive = Download-Release -Version $version
+    $archive = Download-Release -Version $version -Arch $arch
     Install-Release -ArchivePath $archive -Version $version
     Configure-Path
     Verify-Install
