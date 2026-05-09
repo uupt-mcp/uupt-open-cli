@@ -1,0 +1,57 @@
+package api
+
+import (
+	"uupt-open-cli/internal/config"
+)
+
+// OrderPrice 订单询价
+func OrderPrice(cfg *config.Config, fromAddress string, toAddress string, city string) (map[string]interface{}, error) {
+	bizParams := map[string]interface{}{
+		"fromAddress":    fromAddress,
+		"toAddress":      toAddress,
+		"sendType":       "SEND",
+		"cityName":       city,
+		"specialChannel": 2,
+	}
+
+	return AuthorizedRequest(cfg, "order/orderPrice", bizParams)
+}
+
+// CreateOrder 创建订单
+func CreateOrder(cfg *config.Config, priceToken string, receiverPhone string, channel string) (map[string]interface{}, error) {
+	specialChannel := 2
+	if channel == "wechat" {
+		specialChannel = 4
+	}
+	bizParams := map[string]interface{}{
+		"priceToken":     priceToken,
+		"receiver_phone": receiverPhone,
+		"pushType":       "OPEN_ORDER",
+		"payType":        "BALANCE_PAY",
+		"specialChannel": specialChannel,
+		"specialType":    "NOT_NEED_WARM",
+	}
+
+	return AuthorizedRequest(cfg, "order/addOrder", bizParams)
+}
+
+// OrderDetail 查询订单详情
+func OrderDetail(cfg *config.Config, orderCode string) (map[string]interface{}, error) {
+	bizParams := map[string]interface{}{
+		"order_code": orderCode,
+	}
+
+	return AuthorizedRequest(cfg, "order/orderDetail", bizParams)
+}
+
+// CancelOrder 取消订单
+func CancelOrder(cfg *config.Config, orderCode string, reason string) (map[string]interface{}, error) {
+	bizParams := map[string]interface{}{
+		"order_code": orderCode,
+	}
+	if reason != "" {
+		bizParams["reason"] = reason
+	}
+
+	return AuthorizedRequest(cfg, "order/cancelOrder", bizParams)
+}
