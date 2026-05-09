@@ -27,7 +27,7 @@ archives:
     format_overrides:
       - goos: windows
         formats: [zip]
-    name_template: "uupt-open-cli-{{ .Version }}-{{ if eq .Os "darwin" }}macos{{ else }}{{ .Os }}{{ end }}-{{ .Arch }}"
+    name_template: 'uupt-open-cli-{{ .Version }}-{{ if eq .Os "darwin" }}macos{{ else }}{{ .Os }}{{ end }}-{{ .Arch }}'
     files:
       - configs/defaults.json
       - src: scripts/install.sh
