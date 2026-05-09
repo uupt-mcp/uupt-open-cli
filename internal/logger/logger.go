@@ -125,10 +125,10 @@ func writeLog(level Level, levelStr string, msg string) {
 	logFile.WriteString(line)
 }
 
-func Debug(msg string)  { writeLog(DEBUG, "DEBUG", msg) }
-func Info(msg string)   { writeLog(INFO, "INFO", msg) }
-func Warn(msg string)   { writeLog(WARN, "WARN", msg) }
-func Error(msg string)  { writeLog(ERROR, "ERROR", msg) }
+func Debug(msg string) { writeLog(DEBUG, "DEBUG", msg) }
+func Info(msg string)  { writeLog(INFO, "INFO", msg) }
+func Warn(msg string)  { writeLog(WARN, "WARN", msg) }
+func Error(msg string) { writeLog(ERROR, "ERROR", msg) }
 
 func Debugf(format string, args ...interface{}) { Debug(fmt.Sprintf(format, args...)) }
 func Infof(format string, args ...interface{})  { Info(fmt.Sprintf(format, args...)) }
