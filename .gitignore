@@ -4,7 +4,7 @@
 *.dll
 *.so
 *.dylib
-uupt-open-cli
+/uupt-open-cli
 
 # Test binary
 *.test
