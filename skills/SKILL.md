@@ -192,7 +192,7 @@ message(action=send, channel="wechat", path="{QRCODE_FILE}", message="请扫码�
 - 执行 uninstall 命令
 - 确认卸载（除非使用 --force 跳过确认）
 - 自动移除 PATH 配置、删除安装目录
-- Windows 下如果从安装目录运行，会安排进程退出后自动清理
+- Windows 下如果从安装目录运行，优先使用 PowerShell 等待进程退出后自动删除；若 PowerShell 不可用则降级使用 cmd.exe 批处理延迟删除
 
 ## 项目约定
 

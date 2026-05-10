@@ -140,7 +140,7 @@ func removeInstallDir(installDir string) {
 }
 
 // removeInstallDirSelfWindows 处理 Windows 下从安装目录运行时的删除
-// 通过启动后台 PowerShell 进程，在当前进程退出后自动删除安装目录
+// 通过启动后台进程，在当前进程退出后自动删除安装目录
 func removeInstallDirSelfWindows(installDir string) {
 	exe, err := os.Executable()
 	if err != nil {
@@ -169,43 +169,97 @@ func removeInstallDirSelfWindows(installDir string) {
 		os.RemoveAll(entryPath)
 	}
 
-	// 创建临时清理脚本，在当前进程退出后自动删除安装目录
 	pid := os.Getpid()
-	tmpScript := filepath.Join(os.TempDir(), fmt.Sprintf("uupt-cleanup-%d.ps1", pid))
-	scriptContent := fmt.Sprintf(
-		"$p = Get-Process -Id %d -ErrorAction SilentlyContinue\nif ($p) { Wait-Process -Id %d -ErrorAction SilentlyContinue }\nRemove-Item -Recurse -Force -LiteralPath '%s' -ErrorAction SilentlyContinue\nRemove-Item -Force -LiteralPath '%s' -ErrorAction SilentlyContinue\n",
-		pid, pid,
-		strings.ReplaceAll(installDir, "'", "''"),
-		strings.ReplaceAll(tmpScript, "'", "''"),
-	)
 
-	if err := os.WriteFile(tmpScript, []byte(scriptContent), 0644); err != nil {
-		fmt.Println("[WARN] 当前正在从安装目录运行，无法删除正在使用的二进制文件")
-		fmt.Printf("[提示] 请关闭终端后手动删除: %s\n", installDir)
+	// 方案1：使用 PowerShell 等待进程退出后删除（精确，可等待进程释放文件锁）
+	if tryPowerShellCleanup(pid, installDir) {
+		fmt.Println("[INFO] 已安排在进程退出后自动清理安装目录")
 		return
 	}
 
-	psExe := "pwsh"
-	if _, err := exec.LookPath("pwsh"); err != nil {
-		psExe = "powershell"
+	// 方案2：使用 cmd.exe 批处理延迟删除（简单可靠，不依赖 PowerShell）
+	if tryBatchCleanup(installDir) {
+		fmt.Println("[INFO] 已安排延迟自动清理安装目录")
+		return
 	}
 
-	cmd := exec.Command(psExe, "-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-File", tmpScript)
+	// 所有方案均失败，提示手动删除
+	fmt.Println("[WARN] 当前正在从安装目录运行，无法删除正在使用的二进制文件")
+	fmt.Printf("[提示] 请关闭终端后手动删除: %s\n", installDir)
+}
+
+// tryPowerShellCleanup 使用 PowerShell 等待当前进程退出后删除安装目录
+func tryPowerShellCleanup(pid int, installDir string) bool {
+	psExe := findPowerShell()
+	if psExe == "" {
+		return false
+	}
+
+	psCommand := fmt.Sprintf(
+		"$p = Get-Process -Id %d -ErrorAction SilentlyContinue; if ($p) { Wait-Process -Id %d -ErrorAction SilentlyContinue }; Remove-Item -Recurse -Force -LiteralPath '%s' -ErrorAction SilentlyContinue",
+		pid, pid,
+		strings.ReplaceAll(installDir, "'", "''"),
+	)
+
+	// 通过 cmd.exe start /min 在后台启动 PowerShell
+	// 比 PowerShell -WindowStyle Hidden -File 更可靠：
+	//   - cmd.exe start 确保子进程独立于父进程，父进程退出后子进程继续运行
+	//   - 使用 -Command 而非 -File，避免脚本文件执行策略限制
+	//   - /min 最小化窗口而非隐藏，兼容性更好
+	cmd := exec.Command("cmd", "/c", "start", "/min", "", psExe,
+		"-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", psCommand)
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	cmd.Stdin = nil
 
 	if err := cmd.Start(); err != nil {
-		os.Remove(tmpScript) // 清理临时文件
-		fmt.Println("[WARN] 当前正在从安装目录运行，无法删除正在使用的二进制文件")
-		fmt.Printf("[提示] 请关闭终端后手动删除: %s\n", installDir)
-		return
+		return false
 	}
 
-	// 释放子进程，使其独立运行
 	cmd.Process.Release()
+	return true
+}
 
-	fmt.Println("[INFO] 已安排在进程退出后自动清理安装目录")
+// tryBatchCleanup 使用 cmd.exe 批处理延迟删除安装目录
+// 不依赖 PowerShell，通过 ping 延迟等待进程退出
+func tryBatchCleanup(installDir string) bool {
+	pid := os.Getpid()
+	tmpBat := filepath.Join(os.TempDir(), fmt.Sprintf("uupt-cleanup-%d.bat", pid))
+
+	// ping -n 4 延迟约3秒，等待当前进程退出后删除目录
+	batContent := fmt.Sprintf(
+		"@echo off\r\nping -n 4 127.0.0.1 >nul 2>&1\r\nrd /s /q \"%s\" 2>nul\r\ndel /f /q \"%s\" 2>nul\r\n",
+		installDir,
+		tmpBat,
+	)
+
+	if err := os.WriteFile(tmpBat, []byte(batContent), 0644); err != nil {
+		return false
+	}
+
+	cmd := exec.Command("cmd", "/c", "start", "/min", "", tmpBat)
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	cmd.Stdin = nil
+
+	if err := cmd.Start(); err != nil {
+		os.Remove(tmpBat)
+		return false
+	}
+
+	cmd.Process.Release()
+	return true
+}
+
+// findPowerShell 查找可用的 PowerShell 可执行文件路径
+func findPowerShell() string {
+	if _, err := exec.LookPath("pwsh"); err == nil {
+		return "pwsh"
+	}
+	if _, err := exec.LookPath("powershell"); err == nil {
+		return "powershell"
+	}
+	return ""
 }
 
 func removeFromPath(installDir string) {
@@ -230,9 +284,12 @@ func removeFromWindowsPath(installDir string) {
 	)
 
 	// 优先使用 PowerShell Core (pwsh)，降级到 Windows PowerShell (powershell)
-	psExe := "pwsh"
-	if _, err := exec.LookPath("pwsh"); err != nil {
-		psExe = "powershell"
+	psExe := findPowerShell()
+	if psExe == "" {
+		fmt.Println("[WARN] 未找到 PowerShell，无法自动移除 PATH")
+		fmt.Println("[提示] 请手动从系统环境变量 PATH 中移除:")
+		fmt.Printf("  %s\n", installDir)
+		return
 	}
 
 	cmd := exec.Command(psExe, "-NoProfile", "-Command", psScript)
