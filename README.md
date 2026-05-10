@@ -10,6 +10,7 @@ UU跑腿开放平台 CLI 工具 —— 为 AI 智能体提供同城即时配送�
 - **detail** — 查询订单详情
 - **cancel** — 取消订单
 - **track** — 跑男实时追踪
+- **skill** — 管理 Agent Skill（安装/卸载）
 - **update** — 检查并更新到最新版本
 - **uninstall** — 卸载 uupt-open-cli
 
@@ -118,6 +119,65 @@ uupt-open-cli cancel --order-code="UU123456789" --reason="不需要了"
 # 跑男追踪
 uupt-open-cli track --order-code="UU123456789"
 ```
+
+## AI 智能体集成
+
+uupt-open-cli 为 AI 智能体提供完整的 Agent Skill，安装后 Claude Code / Cursor / Windsurf / Codex 等智能体可通过自然语言直接操作 UU跑腿服务。
+
+### 安装 Skill
+
+**方式一：CLI 命令安装（推荐）**
+
+```bash
+# 安装到当前项目目录
+uupt-open-cli skill install
+
+# 安装到 HOME 目录（所有智能体全局可用）
+uupt-open-cli skill install --root ~
+
+# 卸载
+uupt-open-cli skill uninstall
+```
+
+**方式二：独立脚本安装**
+
+**macOS / Linux：**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install-skills.sh | sh
+```
+
+**Windows (PowerShell)：**
+
+```powershell
+irm https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install-skills.ps1 | iex
+```
+
+> `install.sh` 安装 CLI 到 `$HOME/.uupt-open-cli/`（全局）；`install-skills.sh` 安装 Skill 到 `./.agents/skills/uupt`（当前项目），自动检测已安装的智能体目录。
+
+**指定安装目录：**
+
+```bash
+# 安装到 HOME 目录（所有智能体全局可用）
+UUPT_SKILLS_ROOT=$HOME curl -fsSL https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install-skills.sh | sh
+
+# 指定版本
+UUPT_SKILLS_VERSION=v1.0.0 curl -fsSL https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install-skills.sh | sh
+```
+
+### Skill 内容
+
+| 组件 | 路径 | 说明 |
+|------|------|------|
+| 主 Skill | `SKILL.md` | 意图路由、决策树、安全规则、输出标记处理 |
+| CLI 使用说明 | `references/cli-usage.md` | 命令格式、参数规范、交互流程 |
+| 接口参考 | `references/api-reference.md` | 各命令参数详细说明与示例 |
+
+### 支持的智能体
+
+Skill 自动安装到以下已检测到的智能体目录：
+
+`.agents` · `.claude` · `.cursor` · `.gemini` · `.codex` · `.github` · `.windsurf` · `.augment` · `.cline` · `.amp` · `.kiro` · `.trae` · `.openclaw` · `.hermes` · `.qoder`
 
 ## 更新
 

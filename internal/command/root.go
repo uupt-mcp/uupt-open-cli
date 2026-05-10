@@ -32,6 +32,7 @@ var RootCmd = &cobra.Command{
 			fmt.Println("  detail      查询订单详情")
 			fmt.Println("  cancel      取消订单")
 			fmt.Println("  track       跑男实时追踪")
+			fmt.Println("  skill       管理 Agent Skill")
 			fmt.Println("  update      检查并更新到最新版本")
 			fmt.Println("  uninstall   卸载 uupt-open-cli")
 			return
