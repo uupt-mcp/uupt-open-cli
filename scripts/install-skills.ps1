@@ -28,10 +28,6 @@ function Write-Err  { param([string]$Message) Write-Host "  ❌ $Message" -Foreg
 function Resolve-SkillVersion {
     $resolvedVersion = $Version
 
-    if ($resolvedVersion -eq "latest") {
-        return $Version
-    }
-
     try {
         $response = Invoke-WebRequest -Uri "https://github.com/$Repo/releases/latest" -Method Head -MaximumRedirection 0 -ErrorAction SilentlyContinue -UseBasicParsing
         $location = $response.Headers.Location
