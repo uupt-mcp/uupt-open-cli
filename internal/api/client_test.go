@@ -13,7 +13,7 @@ func TestSignatureCompatibility_OrderPrice(t *testing.T) {
 		"toAddress":      "郑州市二七区大学路",
 		"sendType":       "SEND",
 		"cityName":       "郑州市",
-		"specialChannel": 2,
+		"specialChannel": 5,
 	}
 	appSecret := "47888e576b454a23a1f4a34abaaac95d"
 	timestamp := 1700000000
@@ -51,7 +51,7 @@ func TestBizJsonSerialization(t *testing.T) {
 func TestSignatureMatchesPython(t *testing.T) {
 	// Python代码验证:
 	//   import json, hashlib
-	//   biz = {"cityName":"郑州市","fromAddress":"郑州市金水区花园路","sendType":"SEND","specialChannel":2,"toAddress":"郑州市二七区大学路"}
+	//   biz = {"cityName":"郑州市","fromAddress":"郑州市金水区花园路","sendType":"SEND","specialChannel":5,"toAddress":"郑州市二七区大学路"}
 	//   biz_json = json.dumps(biz, ensure_ascii=False, separators=(",",":"), sort_keys=True)
 	//   sign_str = biz_json + "47888e576b454a23a1f4a34abaaac95d" + "1700000000"
 	//   sign = hashlib.md5(sign_str.encode("utf-8")).hexdigest().upper()
@@ -61,7 +61,7 @@ func TestSignatureMatchesPython(t *testing.T) {
 		"toAddress":      "郑州市二七区大学路",
 		"sendType":       "SEND",
 		"cityName":       "郑州市",
-		"specialChannel": 2,
+		"specialChannel": 5,
 	}
 	appSecret := "47888e576b454a23a1f4a34abaaac95d"
 	timestamp := 1700000000
@@ -74,7 +74,7 @@ func TestSignatureMatchesPython(t *testing.T) {
 
 	// json-iterator SortMapKeys=true 按键名字母序排列
 	// 预期键序: cityName, fromAddress, sendType, specialChannel, toAddress
-	expectedBizJson := `{"cityName":"郑州市","fromAddress":"郑州市金水区花园路","sendType":"SEND","specialChannel":2,"toAddress":"郑州市二七区大学路"}`
+	expectedBizJson := `{"cityName":"郑州市","fromAddress":"郑州市金水区花园路","sendType":"SEND","specialChannel":5,"toAddress":"郑州市二七区大学路"}`
 	if bizJson != expectedBizJson {
 		t.Errorf("bizJson不匹配\n期望: %s\n实际: %s", expectedBizJson, bizJson)
 	}
@@ -91,7 +91,7 @@ func TestSignatureMatchesPython(t *testing.T) {
 
 func TestIntegerSerialization(t *testing.T) {
 	bizParams := map[string]interface{}{
-		"specialChannel": 2,
+		"specialChannel": 5,
 		"count":          10,
 	}
 	bizJson, _ := jsonAPI.MarshalToString(bizParams)

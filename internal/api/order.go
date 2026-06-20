@@ -11,7 +11,7 @@ func OrderPrice(cfg *config.Config, fromAddress string, toAddress string, city s
 		"toAddress":      toAddress,
 		"sendType":       "SEND",
 		"cityName":       city,
-		"specialChannel": 2,
+		"specialChannel": 5,
 	}
 
 	return AuthorizedRequest(cfg, "order/orderPrice", bizParams)
@@ -19,9 +19,9 @@ func OrderPrice(cfg *config.Config, fromAddress string, toAddress string, city s
 
 // CreateOrder 创建订单
 func CreateOrder(cfg *config.Config, priceToken string, receiverPhone string, channel string) (map[string]interface{}, error) {
-	specialChannel := 2
+	specialChannel := 5
 	if channel == "wechat" {
-		specialChannel = 4
+		specialChannel = 6
 	}
 	bizParams := map[string]interface{}{
 		"priceToken":     priceToken,

@@ -83,7 +83,7 @@
 | toAddress | string | 是 | 终点地址 |
 | sendType | string | 是 | 固定"SEND" |
 | cityName | string | 是 | 城市名（默认"郑州市"） |
-| specialChannel | int | 是 | 固定2 |
+| specialChannel | int | 是 | 固定5 |
 
 **响应关键字段**：
 
@@ -106,14 +106,14 @@
 | receiver_phone | string | 是 | 收件人手机号 |
 | pushType | string | 是 | 固定"OPEN_ORDER" |
 | payType | string | 是 | 固定"BALANCE_PAY" |
-| specialChannel | int | 是 | 2(默认) 或 4(微信) |
+| specialChannel | int | 是 | 5(默认) 或 6(微信) |
 | specialType | string | 是 | 固定"NOT_NEED_WARM" |
 
 **specialChannel 映射**：
 | 渠道 | specialChannel值 |
 |------|-----------------|
-| 默认(余额支付) | 2 |
-| wechat(微信支付) | 4 |
+| 默认(余额支付) | 5 |
+| wechat(微信支付) | 6 |
 
 **响应关键字段**：
 
@@ -198,8 +198,8 @@
 
 | 值 | 含义 |
 |----|------|
-| 2 | 默认（余额支付） |
-| 4 | 微信支付 |
+| 5 | 默认（余额支付） |
+| 6 | 微信支付 |
 
 ### 退出码
 
