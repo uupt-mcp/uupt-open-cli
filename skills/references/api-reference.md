@@ -33,10 +33,6 @@
 }
 ```
 
-### API基础URL
-- 生产：`https://api-open.uupt.com/openapi/v3/`
-- 测试：`http://api-open.test.uupt.com/openapi/v3/`
-
 ---
 
 ## register 注册/授权
