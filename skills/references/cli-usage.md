@@ -67,14 +67,24 @@ $HOME/.uupt-open-cli/uupt-open-cli register --mobile="13800138000" --sms-code="1
 $HOME/.uupt-open-cli/uupt-open-cli register --mobile="13800138000" --image-code="5678"
 ```
 
-### 订单询价
+### 订单询价（跑腿配送）
 ```bash
 $HOME/.uupt-open-cli/uupt-open-cli price --from-address="郑州市金水区花园路1号" --to-address="郑州市二七区大学路100号" --city="郑州市"
 ```
 
-### 创建订单
+### 订单询价（帮忙服务）
+```bash
+$HOME/.uupt-open-cli/uupt-open-cli price --from-address="郑州市金水区花园路1号" --order-type="help"
+```
+
+### 创建订单（跑腿配送）
 ```bash
 $HOME/.uupt-open-cli/uupt-open-cli create --price-token="TOKEN_FROM_PRICE" --receiver-phone="13800138000"
+```
+
+### 创建订单（帮忙服务）
+```bash
+$HOME/.uupt-open-cli/uupt-open-cli create --price-token="TOKEN_FROM_PRICE" --receiver-phone="13800138000" --note="帮我搬一箱矿泉水到3楼"
 ```
 
 ### 创建订单（微信支付渠道）
@@ -142,9 +152,10 @@ $HOME/.uupt-open-cli/uupt-open-cli uninstall --force
 ### price
 | 参数 | 必填 | 说明 |
 |------|------|------|
-| --from-address | 是 | 发货地址 |
-| --to-address | 是 | 收货地址 |
-| --city | 否 | 城市名称（默认"郑州市"） |
+| --from-address | 是 | 发货地址（帮忙订单时填写帮忙地点） |
+| --to-address | 配送必填 | 收货地址（帮忙订单时无需填写，自动使用发货地址） |
+| --city | 否 | 城市名称（默认“郑州市”） |
+| --order-type | 否 | 订单类型：send=跑腿配送（默认），help=帮忙服务 |
 
 ### create
 | 参数 | 必填 | 说明 |
@@ -152,6 +163,7 @@ $HOME/.uupt-open-cli/uupt-open-cli uninstall --force
 | --price-token | 是 | 询价token |
 | --receiver-phone | 是 | 收件人手机号 |
 | --channel | 否 | 支付渠道（wechat表示微信） |
+| --note | 帮忙必填 | 帮忙内容描述（帮忙订单时必须填写） |
 
 ### detail
 | 参数 | 必填 | 说明 |

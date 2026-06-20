@@ -13,7 +13,7 @@ import (
 
 var createCmd = &cobra.Command{
 	Use:   "create",
-	Short: "创建订单",
+	Short: "创建订单（支持跑腿配送和帮忙服务）",
 	Run:   runCreate,
 }
 
@@ -21,12 +21,14 @@ var (
 	createPriceToken    string
 	createReceiverPhone string
 	createChannel       string
+	createNote          string
 )
 
 func init() {
 	createCmd.Flags().StringVar(&createPriceToken, "price-token", "", "询价token（必填）")
 	createCmd.Flags().StringVar(&createReceiverPhone, "receiver-phone", "", "收件人手机号（必填）")
 	createCmd.Flags().StringVar(&createChannel, "channel", "", "支付渠道（可选，wechat表示微信）")
+	createCmd.Flags().StringVar(&createNote, "note", "", "帮忙内容描述（帮忙订单时必填）")
 	createCmd.MarkFlagRequired("price-token")
 	createCmd.MarkFlagRequired("receiver-phone")
 	RootCmd.AddCommand(createCmd)
@@ -35,7 +37,7 @@ func init() {
 func runCreate(cmd *cobra.Command, args []string) {
 	cfg := config.EnsureConfig(true)
 
-	result, err := api.CreateOrder(cfg, createPriceToken, createReceiverPhone, createChannel)
+	result, err := api.CreateOrder(cfg, createPriceToken, createReceiverPhone, createChannel, createNote)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "创建订单失败: %s\n", err.Error())
 		os.Exit(1)

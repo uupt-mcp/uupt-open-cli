@@ -104,11 +104,17 @@ uupt-open-cli register --mobile="13800138000"
 # 注册（提交验证码）
 uupt-open-cli register --mobile="13800138000" --sms-code="123456"
 
-# 询价
+# 跑腿配送询价
 uupt-open-cli price --from-address="郑州市金水区花园路" --to-address="郑州市二七区大学路"
 
-# 创建订单
+# 帮忙服务询价
+uupt-open-cli price --from-address="郑州市金水区花园路" --order-type="help"
+
+# 创建跑腿配送订单
 uupt-open-cli create --price-token="xxx" --receiver-phone="13800138000"
+
+# 创建帮忙服务订单
+uupt-open-cli create --price-token="xxx" --receiver-phone="13800138000" --note="帮我搬一箱矿泉水到3楼"
 
 # 查询订单
 uupt-open-cli detail --order-code="UU123456789"
@@ -119,6 +125,17 @@ uupt-open-cli cancel --order-code="UU123456789" --reason="不需要了"
 # 跑男追踪
 uupt-open-cli track --order-code="UU123456789"
 ```
+
+### 订单类型
+
+支持两种订单类型：
+
+| 类型 | 参数值 | 说明 |
+|------|--------|------|
+| 跑腿配送 | `send`（默认） | 物品从 A 地送到 B 地 |
+| 帮忙服务 | `help` | 跑男在指定地点提供现场协助（起始地址和终点地址相同） |
+
+帮忙订单需要额外传递 `--note` 参数描述具体的帮忙内容。
 
 ## AI 智能体集成
 

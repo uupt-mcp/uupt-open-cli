@@ -75,11 +75,12 @@
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| fromAddress | string | 是 | 起点地址（越详细越准确） |
-| toAddress | string | 是 | 终点地址 |
-| sendType | string | 是 | 固定"SEND" |
-| cityName | string | 是 | 城市名（默认"郑州市"） |
+| fromAddress | string | 是 | 起点地址（帮忙订单时为帮忙地点） |
+| toAddress | string | 是 | 终点地址（帮忙订单时与起点地址相同） |
+| sendType | string | 是 | `SEND`=跑腿配送，`HELP`=帮忙服务 |
+| cityName | string | 是 | 城市名（默认“郑州市”） |
 | specialChannel | int | 是 | 固定5 |
+| goodsType | string | 帮忙必填 | 帮忙服务时固定 `ALLHELP` |
 
 **响应关键字段**：
 
@@ -104,6 +105,7 @@
 | payType | string | 是 | 固定"BALANCE_PAY" |
 | specialChannel | int | 是 | 5(默认) 或 6(微信) |
 | specialType | string | 是 | 固定"NOT_NEED_WARM" |
+| note | string | 帮忙必填 | 帮忙内容描述（帮忙订单时必须填写） |
 
 **specialChannel 映射**：
 | 渠道 | specialChannel值 |

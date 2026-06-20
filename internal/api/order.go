@@ -5,20 +5,31 @@ import (
 )
 
 // OrderPrice 订单询价
-func OrderPrice(cfg *config.Config, fromAddress string, toAddress string, city string) (map[string]interface{}, error) {
+func OrderPrice(cfg *config.Config, fromAddress string, toAddress string, city string, orderType string) (map[string]interface{}, error) {
+	isHelp := orderType == "help"
+
+	sendType := "SEND"
+	if isHelp {
+		sendType = "HELP"
+	}
+
 	bizParams := map[string]interface{}{
 		"fromAddress":    fromAddress,
 		"toAddress":      toAddress,
-		"sendType":       "SEND",
+		"sendType":       sendType,
 		"cityName":       city,
 		"specialChannel": 5,
+	}
+
+	if isHelp {
+		bizParams["goodsType"] = "ALLHELP"
 	}
 
 	return AuthorizedRequest(cfg, "order/orderPrice", bizParams)
 }
 
 // CreateOrder 创建订单
-func CreateOrder(cfg *config.Config, priceToken string, receiverPhone string, channel string) (map[string]interface{}, error) {
+func CreateOrder(cfg *config.Config, priceToken string, receiverPhone string, channel string, note string) (map[string]interface{}, error) {
 	specialChannel := 5
 	if channel == "wechat" {
 		specialChannel = 6
@@ -30,6 +41,10 @@ func CreateOrder(cfg *config.Config, priceToken string, receiverPhone string, ch
 		"payType":        "BALANCE_PAY",
 		"specialChannel": specialChannel,
 		"specialType":    "NOT_NEED_WARM",
+	}
+
+	if note != "" {
+		bizParams["note"] = note
 	}
 
 	return AuthorizedRequest(cfg, "order/addOrder", bizParams)

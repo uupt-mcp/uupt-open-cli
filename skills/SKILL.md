@@ -22,8 +22,8 @@ description: 当 AI 智能体需要调用 UU跑腿同城配送服务（注册、
 ## 已支持命令
 
 - `register` — 手机号注册/获取授权
-- `price` — 订单询价
-- `create` — 创建订单
+- `price` — 订单询价（支持跑腿配送和帮忙服务）
+- `create` — 创建订单（支持跑腿配送和帮忙服务）
 - `detail` — 查询订单详情
 - `cancel` — 取消订单
 - `track` — 跑男实时追踪
@@ -45,8 +45,10 @@ $HOME/.uupt-open-cli/uupt-open-cli <command> [flags]
 | register | `$HOME/.uupt-open-cli/uupt-open-cli register --mobile="13800138000"` |
 | register(带验证码) | `$HOME/.uupt-open-cli/uupt-open-cli register --mobile="13800138000" --sms-code="123456"` |
 | register(带图片验证码) | `$HOME/.uupt-open-cli/uupt-open-cli register --mobile="13800138000" --image-code="1234"` |
-| price | `$HOME/.uupt-open-cli/uupt-open-cli price --from-address="郑州市金水区" --to-address="郑州市二七区"` |
-| create | `$HOME/.uupt-open-cli/uupt-open-cli create --price-token="xxx" --receiver-phone="13800138000"` |
+| price(跑腿配送) | `$HOME/.uupt-open-cli/uupt-open-cli price --from-address="郑州市金水区" --to-address="郑州市二七区"` |
+| price(帮忙服务) | `$HOME/.uupt-open-cli/uupt-open-cli price --from-address="郑州市金水区" --order-type="help"` |
+| create(跑腿配送) | `$HOME/.uupt-open-cli/uupt-open-cli create --price-token="xxx" --receiver-phone="13800138000"` |
+| create(帮忙服务) | `$HOME/.uupt-open-cli/uupt-open-cli create --price-token="xxx" --receiver-phone="13800138000" --note="帮忙内容"` |
 | create(微信) | `$HOME/.uupt-open-cli/uupt-open-cli create --price-token="xxx" --receiver-phone="13800138000" --channel="wechat"` |
 | detail | `$HOME/.uupt-open-cli/uupt-open-cli detail --order-code="UU123456789"` |
 | cancel | `$HOME/.uupt-open-cli/uupt-open-cli cancel --order-code="UU123456789" --reason="不需要了"` |
@@ -81,13 +83,16 @@ $HOME/.uupt-open-cli/uupt-open-cli <command> [flags]
 
 ### 场景一：询价
 
-- 用户提供起点和终点地址
+- 判断订单类型（配送 vs 帮忙）
+- 配送订单：提供起点和终点地址
+- 帮忙订单：只提供帮忙地点，`--order-type="help"`，`--to-address` 自动使用 `--from-address` 的值
 - 执行 price 命令
 - 返回价格（分转元）和距离
 
 ### 场景二：下单
 
 - 需要先询价获得 priceToken
+- 帮忙订单必须传递 `--note` 参数描述具体帮忙内容
 - 执行 create 命令
 - 成功返回 orderCode
 - 如果 [PAYMENT_REQUIRED]，按渠道展示支付信息
@@ -203,3 +208,5 @@ message(action=send, channel="wechat", path="{QRCODE_FILE}", message="请扫码�
 - 不存储用户敏感信息（仅 openId 保存在本地配置）
 - 余额不足时返回 `[PAYMENT_REQUIRED]`，微信渠道必须用 `message(action=send, channel="wechat", path="{QRCODE_FILE}")` 发送二维码图片附件；其他渠道直接发送 `{PAYMENT_URL}` 支付链接
 - 微信渠道创建订单时必须传递 `--channel="wechat"` 参数以生成支付二维码图片
+- 帮忙订单询价时使用 `--order-type="help"`，起始地址和终点地址自动保持一致
+- 帮忙订单创建时必须传递 `--note` 参数描述具体帮忙内容
