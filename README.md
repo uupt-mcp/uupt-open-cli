@@ -22,49 +22,49 @@ UU跑腿开放平台 CLI 工具 —— 为 AI 智能体提供同城即时配送�
 #### macOS / Linux
 
 ```bash
-curl -fsSL https://otherfiles.uupt.com/open-cli/install.sh | bash
+curl -fsSL https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/scripts/install.sh | bash
 ```
 
 #### Windows
 
 ```powershell
-curl.exe -fsSL --tlsv1.2 -o $env:TEMP\uupt-install.ps1 https://otherfiles.uupt.com/open-cli/install.ps1
+curl.exe -fsSL --tlsv1.2 -o $env:TEMP\uupt-install.ps1 https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/scripts/install.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\uupt-install.ps1
 ```
 
 ### 方式二：手动下载安装
 
-从 OSS 下载对应平台的压缩包（GitHub Releases 仅作备用）：
+从 [Releases 页面](https://github.com/uupt-mcp/uupt-open-cli/releases) 下载对应平台的压缩包：
 
 #### macOS
 
 ```bash
 # Apple Silicon (M1/M2/M3)
-curl -LO https://otherfiles.uupt.com/open-cli/v1.0.3/uupt-open-cli-1.0.3-macos-arm64.tar.gz
-tar -xzf uupt-open-cli-1.0.3-macos-arm64.tar.gz
+curl -LO https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.0.0-macos-arm64.tar.gz
+tar -xzf uupt-open-cli-1.0.0-macos-arm64.tar.gz
 
 # Intel
-curl -LO https://otherfiles.uupt.com/open-cli/v1.0.3/uupt-open-cli-1.0.3-macos-amd64.tar.gz
-tar -xzf uupt-open-cli-1.0.3-macos-amd64.tar.gz
+curl -LO https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.0.0-macos-amd64.tar.gz
+tar -xzf uupt-open-cli-1.0.0-macos-amd64.tar.gz
 ```
 
 #### Linux
 
 ```bash
 # ARM64
-curl -LO https://otherfiles.uupt.com/open-cli/v1.0.3/uupt-open-cli-1.0.3-linux-arm64.tar.gz
-tar -xzf uupt-open-cli-1.0.3-linux-arm64.tar.gz
+curl -LO https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.0.0-linux-arm64.tar.gz
+tar -xzf uupt-open-cli-1.0.0-linux-arm64.tar.gz
 
 # AMD64
-curl -LO https://otherfiles.uupt.com/open-cli/v1.0.3/uupt-open-cli-1.0.3-linux-amd64.tar.gz
-tar -xzf uupt-open-cli-1.0.3-linux-amd64.tar.gz
+curl -LO https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.0.0-linux-amd64.tar.gz
+tar -xzf uupt-open-cli-1.0.0-linux-amd64.tar.gz
 ```
 
 #### Windows
 
-下载 [uupt-open-cli-1.0.3-windows-amd64.zip](https://otherfiles.uupt.com/open-cli/v1.0.3/uupt-open-cli-1.0.3-windows-amd64.zip) 并解压。
+下载 [uupt-open-cli-1.0.0-windows-amd64.zip](https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.0.0-windows-amd64.zip) 并解压。
 
-> **注意：** 请将上述链接中的 `1.0.3` 替换为 OSS `latest` 文件中的最新版本号。
+> **注意：** 请将上述链接中的 `1.0.0` 替换为 [Releases 页面](https://github.com/uupt-mcp/uupt-open-cli/releases) 中的最新版本号。
 
 解压后，将二进制文件移动到安装目录并配置 PATH：
 
@@ -218,13 +218,13 @@ uupt-open-cli update
 macOS / Linux：
 
 ```bash
-curl -fsSL https://otherfiles.uupt.com/open-cli/install.sh | bash
+curl -fsSL https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/scripts/install.sh | bash
 ```
 
 Windows：
 
 ```powershell
-curl.exe -fsSL --tlsv1.2 -o $env:TEMP\uupt-install.ps1 https://otherfiles.uupt.com/open-cli/install.ps1
+curl.exe -fsSL --tlsv1.2 -o $env:TEMP\uupt-install.ps1 https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/scripts/install.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\uupt-install.ps1
 ```
 
