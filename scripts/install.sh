@@ -103,11 +103,22 @@ download() {
 
   info "下载 ${filename}..."
   if command -v curl >/dev/null 2>&1; then
-    if ! curl -fSL --connect-timeout 10 --max-time 120 --progress-bar "$url" -o "$dest"; then
-      warn "直连失败，尝试镜像..."
-      if ! curl -fSL --connect-timeout 10 --max-time 120 --progress-bar "https://ghproxy.net/${url}" -o "$dest"; then
-        error "下载失败: $url"
+    downloaded=0
+    for candidate in \
+      "https://ghfast.top/${url}" \
+      "$url" \
+      "https://ghproxy.net/${url}"
+    do
+      info "尝试 $candidate"
+      if curl -fSL --connect-timeout 10 --max-time 180 --retry 1 \
+        --speed-limit 20480 --speed-time 20 --progress-bar "$candidate" -o "$dest"; then
+        downloaded=1
+        break
       fi
+      warn "失败: $candidate"
+    done
+    if [ "$downloaded" -ne 1 ]; then
+      error "下载失败: $url"
     fi
   elif command -v wget >/dev/null 2>&1; then
     if ! wget --timeout=120 --progress=bar:force "$url" -O "$dest"; then
@@ -226,12 +237,15 @@ configure_path() {
 # 验证安装
 verify_install() {
   export PATH="$INSTALL_DIR:$PATH"
+  if [ ! -x "$INSTALL_DIR/$BINARY_NAME" ]; then
+    error "未找到 CLI 可执行文件: $INSTALL_DIR/$BINARY_NAME"
+  fi
   if "$INSTALL_DIR/$BINARY_NAME" --version >/dev/null 2>&1; then
     local ver
     ver=$("$INSTALL_DIR/$BINARY_NAME" --version 2>&1)
     info "安装验证成功: $ver"
   else
-    warn "安装完成，但版本验证未通过（可能需要重新打开终端）"
+    error "无法运行 $INSTALL_DIR/$BINARY_NAME --version"
   fi
 }
 

@@ -11,8 +11,11 @@ try {
 $BaseUrl = "https://github.com/uupt-mcp/uupt-open-cli/releases/download"
 $LatestVersionUrl = "https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/refs/heads/main/latest"
 $InstallDir = "$env:USERPROFILE\.uupt-open-cli"
-$DownloadDir = "$InstallDir\downloads"
+# 下载先落到临时目录。不要在安装成功前创建 ~/.uupt-open-cli，
+# 否则空目录会被当成“已安装”，WorkBuddy 会跳过 init 直接 auth。
+$DownloadDir = Join-Path $env:TEMP "uupt-open-cli-downloads"
 $BinaryName = "uupt-open-cli.exe"
+$MinReleaseZipBytes = 5000000
 
 function Write-Info { param([string]$Message) Write-Host "[INFO] $Message" -ForegroundColor Green }
 function Write-Warn { param([string]$Message) Write-Host "[WARN] $Message" -ForegroundColor Yellow }
@@ -50,10 +53,11 @@ function Get-DownloadUrls {
     }
 
     if ($Url -like "https://github.com/*") {
-        [void]$urls.Add("https://ghproxy.net/$Url")
-        [void]$urls.Add("https://mirror.ghproxy.com/$Url")
+        # 国内实测 ghfast.top 明显快于 ghproxy；慢镜像放到后面并用低速中止。
         [void]$urls.Add("https://ghfast.top/$Url")
         [void]$urls.Add($Url)
+        [void]$urls.Add("https://ghproxy.net/$Url")
+        [void]$urls.Add("https://mirror.ghproxy.com/$Url")
         return $urls
     }
 
@@ -64,7 +68,9 @@ function Get-DownloadUrls {
 function Invoke-FileDownload {
     param(
         [Parameter(Mandatory = $true)][string]$Url,
-        [Parameter(Mandatory = $true)][string]$OutFile
+        [Parameter(Mandatory = $true)][string]$OutFile,
+        [int]$MaxTimeSeconds = 45,
+        [int]$MinBytes = 1
     )
 
     $dir = Split-Path -Parent $OutFile
@@ -79,22 +85,46 @@ function Invoke-FileDownload {
             if (Test-Path $OutFile) { Remove-Item $OutFile -Force -ErrorAction SilentlyContinue }
             if ($curl) {
                 Write-Info "下载 $candidate"
-                & $curl -fsSL --tlsv1.2 --connect-timeout 10 --max-time 180 --retry 1 -o $OutFile $candidate
+                # --speed-limit/--speed-time：镜像过慢时尽快换源，避免占满 WorkBuddy 的 init 超时。
+                & $curl -fsSL --tlsv1.2 --connect-timeout 10 --max-time $MaxTimeSeconds `
+                    --retry 1 --speed-limit 20480 --speed-time 20 `
+                    -o $OutFile $candidate
                 if ($LASTEXITCODE -ne 0) { throw "curl 退出码 $LASTEXITCODE" }
             } else {
                 Write-Info "下载 $candidate (Invoke-WebRequest)"
                 Invoke-WebRequest -Uri $candidate -OutFile $OutFile -UseBasicParsing
             }
-            if ((Test-Path $OutFile) -and (Get-Item $OutFile).Length -gt 0) {
+            if ((Test-Path $OutFile) -and (Get-Item $OutFile).Length -ge $MinBytes) {
                 return
             }
-            throw "下载文件为空"
+            throw "下载文件过小或不存在"
         } catch {
             $lastError = $_
             Write-Warn "失败: $($_.Exception.Message)"
         }
     }
     Write-Err "下载失败: $Url`n$lastError"
+}
+
+function Test-ZipArchive {
+    param([string]$Path)
+    if (-not (Test-Path $Path)) { return $false }
+    if ((Get-Item $Path).Length -lt $MinReleaseZipBytes) { return $false }
+    try {
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $zip = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $Path))
+        try {
+            $hasExe = $false
+            foreach ($entry in $zip.Entries) {
+                if ($entry.Name -like "uupt-open-cli*.exe") { $hasExe = $true; break }
+            }
+            return $hasExe
+        } finally {
+            $zip.Dispose()
+        }
+    } catch {
+        return $false
+    }
 }
 
 # 参数验证
@@ -155,13 +185,20 @@ function Download-Release {
         New-Item -ItemType Directory -Path $DownloadDir -Force | Out-Null
     }
 
-    if ((Test-Path $dest) -and (Get-Item $dest).Length -gt 4000000) {
+    if (Test-ZipArchive $dest) {
         Write-Info "使用已下载文件: $dest"
         return $dest
     }
+    if (Test-Path $dest) {
+        Write-Warn "已下载文件不完整或损坏，重新下载"
+        Remove-Item $dest -Force -ErrorAction SilentlyContinue
+    }
 
     Write-Info "下载 $filename..."
-    Invoke-FileDownload -Url $url -OutFile $dest
+    Invoke-FileDownload -Url $url -OutFile $dest -MaxTimeSeconds 180 -MinBytes $MinReleaseZipBytes
+    if (-not (Test-ZipArchive $dest)) {
+        Write-Err "下载的安装包无效: $dest"
+    }
 
     Write-Info "下载完成: $dest"
     return $dest
@@ -236,11 +273,18 @@ function Configure-Path {
 
 # 验证安装
 function Verify-Install {
+    $exe = Join-Path $InstallDir $BinaryName
+    if (-not (Test-Path $exe)) {
+        Write-Err "未找到 CLI 可执行文件: $exe"
+    }
     try {
-        $ver = & "$InstallDir\$BinaryName" --version 2>&1
-        Write-Info "安装验证成功: $ver"
+        $ver = & $exe --version 2>&1 | Out-String
+        if ($ver -notmatch '\d+\.\d+\.\d+') {
+            Write-Err "无法运行 $exe --version：$ver"
+        }
+        Write-Info "安装验证成功: $($ver.Trim())"
     } catch {
-        Write-Warn "安装完成，但版本验证未通过（请重新打开终端）"
+        Write-Err "无法运行 $exe：$($_.Exception.Message)"
     }
 }
 
