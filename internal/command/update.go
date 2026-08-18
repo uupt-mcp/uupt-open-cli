@@ -19,8 +19,9 @@ import (
 )
 
 const (
-	latestVersionURL = "https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/refs/heads/main/latest"
-	releaseBaseURL   = "https://github.com/uupt-mcp/uupt-open-cli/releases/download"
+	ossBaseURL        = "https://otherfiles.uupt.com/open-cli"
+	githubLatestURL   = "https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/refs/heads/main/latest"
+	githubReleaseBase = "https://github.com/uupt-mcp/uupt-open-cli/releases/download"
 )
 
 var updateCmd = &cobra.Command{
@@ -62,9 +63,10 @@ func runUpdate(cmd *cobra.Command, args []string) {
 		fmt.Printf("[ERROR] 更新失败: %s\n", err.Error())
 		fmt.Println("[提示] 可通过以下命令手动更新:")
 		if runtime.GOOS == "windows" {
-			fmt.Println("  irm https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install.ps1 | iex")
+			fmt.Println("  curl.exe -fsSL --tlsv1.2 -o $env:TEMP\\uupt-install.ps1 https://otherfiles.uupt.com/open-cli/install.ps1")
+			fmt.Println("  powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\\uupt-install.ps1")
 		} else {
-			fmt.Println("  curl -fsSL https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install.sh | bash")
+			fmt.Println("  curl -fsSL https://otherfiles.uupt.com/open-cli/install.sh | bash")
 		}
 		os.Exit(1)
 	}
@@ -73,7 +75,26 @@ func runUpdate(cmd *cobra.Command, args []string) {
 }
 
 func getLatestVersion() (string, error) {
-	resp, err := http.Get(latestVersionURL)
+	urls := []string{
+		ossBaseURL + "/latest",
+		githubLatestURL,
+	}
+	var lastErr error
+	for _, u := range urls {
+		version, err := fetchLatestVersion(u)
+		if err == nil {
+			return version, nil
+		}
+		lastErr = err
+	}
+	if lastErr == nil {
+		return "", fmt.Errorf("版本号为空")
+	}
+	return "", lastErr
+}
+
+func fetchLatestVersion(url string) (string, error) {
+	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
 	}
@@ -92,7 +113,6 @@ func getLatestVersion() (string, error) {
 	if version == "" {
 		return "", fmt.Errorf("版本号为空")
 	}
-
 	return version, nil
 }
 
@@ -106,7 +126,10 @@ func selfUpdate(version string) error {
 		binaryName += ext
 	}
 	archiveName := fmt.Sprintf("uupt-open-cli-%s-%s-%s.%s", version, platform, arch, archiveExt)
-	downloadURL := fmt.Sprintf("%s/v%s/%s", releaseBaseURL, version, archiveName)
+	downloadURLs := []string{
+		fmt.Sprintf("%s/v%s/%s", ossBaseURL, version, archiveName),
+		fmt.Sprintf("%s/v%s/%s", githubReleaseBase, version, archiveName),
+	}
 
 	// 下载压缩包
 	fmt.Printf("[INFO] 下载 %s ...\n", archiveName)
@@ -117,7 +140,7 @@ func selfUpdate(version string) error {
 	defer os.RemoveAll(tmpDir)
 
 	archivePath := filepath.Join(tmpDir, archiveName)
-	if err := downloadFile(downloadURL, archivePath); err != nil {
+	if err := downloadFileWithFallback(downloadURLs, archivePath); err != nil {
 		return fmt.Errorf("下载失败: %w", err)
 	}
 
@@ -215,6 +238,22 @@ func getPlatformInfo() (platform, arch, ext, archiveExt string) {
 	}
 
 	return
+}
+
+func downloadFileWithFallback(urls []string, dest string) error {
+	var lastErr error
+	for _, u := range urls {
+		fmt.Printf("[INFO] 尝试 %s\n", u)
+		if err := downloadFile(u, dest); err != nil {
+			lastErr = err
+			continue
+		}
+		return nil
+	}
+	if lastErr == nil {
+		return fmt.Errorf("没有可用的下载地址")
+	}
+	return lastErr
 }
 
 func downloadFile(url, dest string) error {

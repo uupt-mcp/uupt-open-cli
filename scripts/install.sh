@@ -3,10 +3,12 @@
 
 set -e
 
-# 核心变量
-BASE_URL="https://github.com/uupt-mcp/uupt-open-cli/releases/download"
-LATEST_VERSION_URL="https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/refs/heads/main/latest"
-DOWNLOAD_DIR="$HOME/.uupt-open-cli/downloads"
+# 核心变量（二进制优先走 UU OSS，避免 GitHub 超时）
+OSS_BASE="https://otherfiles.uupt.com/open-cli"
+BASE_URL="$OSS_BASE"
+LATEST_VERSION_URL="$OSS_BASE/latest"
+GITHUB_RELEASE_BASE="https://github.com/uupt-mcp/uupt-open-cli/releases/download"
+DOWNLOAD_DIR="${TMPDIR:-/tmp}/uupt-open-cli-downloads"
 INSTALL_DIR="$HOME/.uupt-open-cli"
 BINARY_NAME="uupt-open-cli"
 
@@ -36,7 +38,7 @@ detect_platform() {
     Linux)   os="linux" ;;
     MINGW*|MSYS*|CYGWIN*)
       echo "[ERROR] 检测到 Windows 环境，请使用 PowerShell 安装脚本:"
-      echo "  curl.exe -fsSL --tlsv1.2 -o %TEMP%\\uupt-install.ps1 https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/scripts/install.ps1"
+      echo "  curl.exe -fsSL --tlsv1.2 -o %TEMP%\\uupt-install.ps1 https://otherfiles.uupt.com/open-cli/install.ps1"
       exit 1
       ;;
     *)       error "不支持的操作系统: $(uname -s)" ;;
@@ -70,9 +72,9 @@ get_version() {
     info "获取最新版本..."
     VERSION=""
     for url in \
+      "$LATEST_VERSION_URL" \
       "https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/latest" \
-      "https://ghproxy.net/https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/refs/heads/main/latest" \
-      "$LATEST_VERSION_URL"
+      "https://ghproxy.net/https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/refs/heads/main/latest"
     do
       if command -v curl >/dev/null 2>&1; then
         VERSION=$(curl -fsSL --connect-timeout 10 --max-time 30 "$url" 2>/dev/null | tr -d '\n\r')
@@ -105,9 +107,10 @@ download() {
   if command -v curl >/dev/null 2>&1; then
     downloaded=0
     for candidate in \
-      "https://ghfast.top/${url}" \
-      "$url" \
-      "https://ghproxy.net/${url}"
+      "${OSS_BASE}/v${VERSION}/${filename}" \
+      "https://ghfast.top/${GITHUB_RELEASE_BASE}/v${VERSION}/${filename}" \
+      "${GITHUB_RELEASE_BASE}/v${VERSION}/${filename}" \
+      "https://ghproxy.net/${GITHUB_RELEASE_BASE}/v${VERSION}/${filename}"
     do
       info "尝试 $candidate"
       if curl -fSL --connect-timeout 10 --max-time 180 --retry 1 \
@@ -122,7 +125,9 @@ download() {
     fi
   elif command -v wget >/dev/null 2>&1; then
     if ! wget --timeout=120 --progress=bar:force "$url" -O "$dest"; then
-      error "下载失败: $url"
+      if ! wget --timeout=120 --progress=bar:force "${GITHUB_RELEASE_BASE}/v${VERSION}/${filename}" -O "$dest"; then
+        error "下载失败: $url"
+      fi
     fi
   else
     error "需要 curl 或 wget 来下载文件，请先安装其中之一"

@@ -78,7 +78,10 @@ func runSkillInstall(cmd *cobra.Command, args []string) {
 	fmt.Printf("[INFO] 最新版本: %s\n", version)
 
 	// 2. 下载 skills zip
-	assetURL := fmt.Sprintf("%s/v%s/uupt-skills.zip", releaseBaseURL, version)
+	assetURLs := []string{
+		fmt.Sprintf("%s/v%s/uupt-skills.zip", ossBaseURL, version),
+		fmt.Sprintf("%s/v%s/uupt-skills.zip", githubReleaseBase, version),
+	}
 	fmt.Printf("[INFO] 正在下载 skills (%s)...\n", version)
 
 	tmpDir, err := os.MkdirTemp("", "uupt-skills-*")
@@ -89,7 +92,7 @@ func runSkillInstall(cmd *cobra.Command, args []string) {
 	defer os.RemoveAll(tmpDir)
 
 	zipPath := filepath.Join(tmpDir, "uupt-skills.zip")
-	if err := downloadFile(assetURL, zipPath); err != nil {
+	if err := downloadFileWithFallback(assetURLs, zipPath); err != nil {
 		fmt.Printf("[ERROR] 下载 skills 失败: %s\n", err.Error())
 		fmt.Println("[提示] 请检查网络连接或稍后重试")
 		os.Exit(1)

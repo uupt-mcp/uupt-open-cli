@@ -7,9 +7,11 @@ try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 } catch {}
 
-# 核心变量
-$BaseUrl = "https://github.com/uupt-mcp/uupt-open-cli/releases/download"
-$LatestVersionUrl = "https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/refs/heads/main/latest"
+# 核心变量（二进制优先走 UU OSS，避免 GitHub 超时）
+$OssBaseUrl = "https://otherfiles.uupt.com/open-cli"
+$GithubReleaseBase = "https://github.com/uupt-mcp/uupt-open-cli/releases/download"
+$BaseUrl = $OssBaseUrl
+$LatestVersionUrl = "$OssBaseUrl/latest"
 $InstallDir = "$env:USERPROFILE\.uupt-open-cli"
 # 下载先落到临时目录。不要在安装成功前创建 ~/.uupt-open-cli，
 # 否则空目录会被当成“已安装”，WorkBuddy 会跳过 init 直接 auth。
@@ -37,6 +39,29 @@ function Get-CurlExe {
 function Get-DownloadUrls {
     param([string]$Url)
     $urls = New-Object System.Collections.Generic.List[string]
+
+    if ($Url.StartsWith($OssBaseUrl)) {
+        [void]$urls.Add($Url)
+        $rest = $Url.Substring($OssBaseUrl.Length).TrimStart('/')
+        if ($rest -eq "latest") {
+            [void]$urls.Add("https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/latest")
+            [void]$urls.Add("https://ghproxy.net/https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/refs/heads/main/latest")
+            return $urls
+        }
+        if ($rest -match '^v(\d+\.\d+\.\d+)/(.+)$') {
+            $gh = "$GithubReleaseBase/v$($Matches[1])/$($Matches[2])"
+            [void]$urls.Add("https://ghfast.top/$gh")
+            [void]$urls.Add($gh)
+            [void]$urls.Add("https://ghproxy.net/$gh")
+            return $urls
+        }
+        if ($rest -match '^install\.(ps1|sh)$') {
+            [void]$urls.Add("https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/scripts/$rest")
+            return $urls
+        }
+        return $urls
+    }
+
     if ($Url -match '^https://raw\.githubusercontent\.com/([^/]+)/([^/]+)/(.+)$') {
         $owner = $Matches[1]
         $repo = $Matches[2]
