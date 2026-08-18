@@ -22,14 +22,14 @@ UU跑腿开放平台 CLI 工具 —— 为 AI 智能体提供同城即时配送�
 #### macOS / Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install.sh | bash
+curl -fsSL https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/scripts/install.sh | bash
 ```
 
 #### Windows
 
 ```powershell
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-irm https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install.ps1 | iex
+curl.exe -fsSL --tlsv1.2 -o $env:TEMP\uupt-install.ps1 https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/scripts/install.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\uupt-install.ps1
 ```
 
 ### 方式二：手动下载安装
@@ -218,14 +218,14 @@ uupt-open-cli update
 macOS / Linux：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install.sh | bash
+curl -fsSL https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/scripts/install.sh | bash
 ```
 
 Windows：
 
 ```powershell
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-irm https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install.ps1 | iex
+curl.exe -fsSL --tlsv1.2 -o $env:TEMP\uupt-install.ps1 https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/scripts/install.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\uupt-install.ps1
 ```
 
 安装脚本会自动检测已有安装，仅替换二进制文件，保留 `configs/config.json` 和 `logs/`。

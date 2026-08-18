@@ -34,9 +34,25 @@ function Get-CurlExe {
 function Get-DownloadUrls {
     param([string]$Url)
     $urls = New-Object System.Collections.Generic.List[string]
-    [void]$urls.Add($Url)
-    if ($Url -like "https://github.com/*" -or $Url -like "https://raw.githubusercontent.com/*") {
+    if ($Url -match '^https://raw\.githubusercontent\.com/([^/]+)/([^/]+)/(.+)$') {
+        $owner = $Matches[1]
+        $repo = $Matches[2]
+        $rest = $Matches[3] -replace '^refs/heads/', ''
+        $slash = $rest.IndexOf('/')
+        if ($slash -gt 0) {
+            $ref = $rest.Substring(0, $slash)
+            $path = $rest.Substring($slash + 1)
+            [void]$urls.Add("https://cdn.jsdelivr.net/gh/$owner/${repo}@${ref}/$path")
+        }
         [void]$urls.Add("https://ghproxy.net/$Url")
+        [void]$urls.Add($Url)
+        return $urls
+    }
+
+    [void]$urls.Add($Url)
+    if ($Url -like "https://github.com/*") {
+        [void]$urls.Add("https://ghproxy.net/$Url")
+        [void]$urls.Add("https://mirror.ghproxy.com/$Url")
     }
     return $urls
 }
@@ -59,7 +75,7 @@ function Invoke-FileDownload {
             if (Test-Path $OutFile) { Remove-Item $OutFile -Force -ErrorAction SilentlyContinue }
             if ($curl) {
                 Write-Info "下载 $candidate"
-                & $curl -fsSL --tlsv1.2 --connect-timeout 20 --max-time 120 --retry 2 -o $OutFile $candidate
+                & $curl -fsSL --tlsv1.2 --connect-timeout 10 --max-time 60 --retry 1 -o $OutFile $candidate
                 if ($LASTEXITCODE -ne 0) { throw "curl 退出码 $LASTEXITCODE" }
             } else {
                 Write-Info "下载 $candidate (Invoke-WebRequest)"

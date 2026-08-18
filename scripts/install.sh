@@ -36,7 +36,7 @@ detect_platform() {
     Linux)   os="linux" ;;
     MINGW*|MSYS*|CYGWIN*)
       echo "[ERROR] 检测到 Windows 环境，请使用 PowerShell 安装脚本:"
-      echo "  [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install.ps1 | iex"
+      echo "  curl.exe -fsSL --tlsv1.2 -o %TEMP%\\uupt-install.ps1 https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/scripts/install.ps1"
       exit 1
       ;;
     *)       error "不支持的操作系统: $(uname -s)" ;;
@@ -68,13 +68,24 @@ get_version() {
     info "使用指定版本: v${VERSION}"
   else
     info "获取最新版本..."
-    if command -v curl >/dev/null 2>&1; then
-      VERSION=$(curl -fsSL "$LATEST_VERSION_URL" 2>/dev/null | tr -d '\n\r')
-    elif command -v wget >/dev/null 2>&1; then
-      VERSION=$(wget -qO- "$LATEST_VERSION_URL" 2>/dev/null | tr -d '\n\r')
-    else
-      error "需要 curl 或 wget 来获取版本号，请先安装其中之一"
-    fi
+    VERSION=""
+    for url in \
+      "https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/latest" \
+      "https://ghproxy.net/https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/refs/heads/main/latest" \
+      "$LATEST_VERSION_URL"
+    do
+      if command -v curl >/dev/null 2>&1; then
+        VERSION=$(curl -fsSL --connect-timeout 10 --max-time 30 "$url" 2>/dev/null | tr -d '\n\r')
+      elif command -v wget >/dev/null 2>&1; then
+        VERSION=$(wget -q --timeout=30 -O- "$url" 2>/dev/null | tr -d '\n\r')
+      else
+        error "需要 curl 或 wget 来获取版本号，请先安装其中之一"
+      fi
+      if [ -n "$VERSION" ]; then
+        break
+      fi
+      warn "获取版本失败: $url"
+    done
     if [ -z "$VERSION" ]; then
       error "无法获取最新版本号"
     fi
@@ -92,11 +103,14 @@ download() {
 
   info "下载 ${filename}..."
   if command -v curl >/dev/null 2>&1; then
-    if ! curl -fSL --progress-bar "$url" -o "$dest"; then
-      error "下载失败: $url"
+    if ! curl -fSL --connect-timeout 10 --max-time 120 --progress-bar "$url" -o "$dest"; then
+      warn "直连失败，尝试镜像..."
+      if ! curl -fSL --connect-timeout 10 --max-time 120 --progress-bar "https://ghproxy.net/${url}" -o "$dest"; then
+        error "下载失败: $url"
+      fi
     fi
   elif command -v wget >/dev/null 2>&1; then
-    if ! wget --progress=bar:force "$url" -O "$dest"; then
+    if ! wget --timeout=120 --progress=bar:force "$url" -O "$dest"; then
       error "下载失败: $url"
     fi
   else
