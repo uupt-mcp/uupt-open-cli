@@ -1,5 +1,11 @@
-# UU跑腿 CLI Windows 安装脚本
+﻿# UU跑腿 CLI Windows 安装脚本
 $ErrorActionPreference = "Stop"
+
+# 旧版 Windows / PowerShell 5 默认 TLS 1.0，访问 GitHub 会报
+# “未能创建 SSL/TLS 安全通道”。必须先启用 TLS 1.2，下载优先走 curl.exe。
+try {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+} catch {}
 
 # 核心变量
 $BaseUrl = "https://github.com/uupt-mcp/uupt-open-cli/releases/download"
@@ -11,6 +17,65 @@ $BinaryName = "uupt-open-cli.exe"
 function Write-Info { param([string]$Message) Write-Host "[INFO] $Message" -ForegroundColor Green }
 function Write-Warn { param([string]$Message) Write-Host "[WARN] $Message" -ForegroundColor Yellow }
 function Write-Err { param([string]$Message) Write-Host "[ERROR] $Message" -ForegroundColor Red; exit 1 }
+
+function Get-CurlExe {
+    $candidates = @(
+        "$env:SystemRoot\System32\curl.exe",
+        "$env:SystemRoot\SysWOW64\curl.exe"
+    )
+    foreach ($c in $candidates) {
+        if (Test-Path $c) { return $c }
+    }
+    $cmd = Get-Command curl.exe -ErrorAction SilentlyContinue
+    if ($cmd) { return $cmd.Source }
+    return $null
+}
+
+function Get-DownloadUrls {
+    param([string]$Url)
+    $urls = New-Object System.Collections.Generic.List[string]
+    [void]$urls.Add($Url)
+    if ($Url -like "https://github.com/*" -or $Url -like "https://raw.githubusercontent.com/*") {
+        [void]$urls.Add("https://ghproxy.net/$Url")
+    }
+    return $urls
+}
+
+function Invoke-FileDownload {
+    param(
+        [Parameter(Mandatory = $true)][string]$Url,
+        [Parameter(Mandatory = $true)][string]$OutFile
+    )
+
+    $dir = Split-Path -Parent $OutFile
+    if ($dir -and -not (Test-Path $dir)) {
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    }
+
+    $curl = Get-CurlExe
+    $lastError = $null
+    foreach ($candidate in (Get-DownloadUrls $Url)) {
+        try {
+            if (Test-Path $OutFile) { Remove-Item $OutFile -Force -ErrorAction SilentlyContinue }
+            if ($curl) {
+                Write-Info "下载 $candidate"
+                & $curl -fsSL --tlsv1.2 --connect-timeout 20 --max-time 120 --retry 2 -o $OutFile $candidate
+                if ($LASTEXITCODE -ne 0) { throw "curl 退出码 $LASTEXITCODE" }
+            } else {
+                Write-Info "下载 $candidate (Invoke-WebRequest)"
+                Invoke-WebRequest -Uri $candidate -OutFile $OutFile -UseBasicParsing
+            }
+            if ((Test-Path $OutFile) -and (Get-Item $OutFile).Length -gt 0) {
+                return
+            }
+            throw "下载文件为空"
+        } catch {
+            $lastError = $_
+            Write-Warn "失败: $($_.Exception.Message)"
+        }
+    }
+    Write-Err "下载失败: $Url`n$lastError"
+}
 
 # 参数验证
 function Get-TargetVersion {
@@ -25,15 +90,17 @@ function Get-TargetVersion {
     }
 
     Write-Info "获取最新版本..."
+    $tmp = Join-Path $env:TEMP "uupt-cli-latest.txt"
     try {
-        $version = (Invoke-WebRequest -Uri $LatestVersionUrl -UseBasicParsing).Content.Trim()
+        Invoke-FileDownload -Url $LatestVersionUrl -OutFile $tmp
+        $version = (Get-Content $tmp -Raw -Encoding UTF8).Trim()
         if ([string]::IsNullOrWhiteSpace($version)) {
             Write-Err "无法获取最新版本号"
         }
         Write-Info "最新版本: v$version"
         return $version
-    } catch {
-        Write-Err "无法获取最新版本: $_"
+    } finally {
+        if (Test-Path $tmp) { Remove-Item $tmp -Force -ErrorAction SilentlyContinue }
     }
 }
 
@@ -60,11 +127,7 @@ function Download-Release {
     }
 
     Write-Info "下载 $filename..."
-    try {
-        Invoke-WebRequest -Uri $url -OutFile $dest -UseBasicParsing
-    } catch {
-        Write-Err "下载失败: $url`n$_"
-    }
+    Invoke-FileDownload -Url $url -OutFile $dest
 
     Write-Info "下载完成: $dest"
     return $dest

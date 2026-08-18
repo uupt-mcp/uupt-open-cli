@@ -36,7 +36,7 @@ detect_platform() {
     Linux)   os="linux" ;;
     MINGW*|MSYS*|CYGWIN*)
       echo "[ERROR] 检测到 Windows 环境，请使用 PowerShell 安装脚本:"
-      echo "  irm https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install.ps1 | iex"
+      echo "  [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install.ps1 | iex"
       exit 1
       ;;
     *)       error "不支持的操作系统: $(uname -s)" ;;

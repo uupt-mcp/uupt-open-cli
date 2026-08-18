@@ -28,6 +28,7 @@ curl -fsSL https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts
 #### Windows
 
 ```powershell
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 irm https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install.ps1 | iex
 ```
 
@@ -223,6 +224,7 @@ curl -fsSL https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts
 Windows：
 
 ```powershell
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 irm https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install.ps1 | iex
 ```
 
