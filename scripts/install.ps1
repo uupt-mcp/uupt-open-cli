@@ -49,11 +49,15 @@ function Get-DownloadUrls {
         return $urls
     }
 
-    [void]$urls.Add($Url)
     if ($Url -like "https://github.com/*") {
         [void]$urls.Add("https://ghproxy.net/$Url")
         [void]$urls.Add("https://mirror.ghproxy.com/$Url")
+        [void]$urls.Add("https://ghfast.top/$Url")
+        [void]$urls.Add($Url)
+        return $urls
     }
+
+    [void]$urls.Add($Url)
     return $urls
 }
 
@@ -75,7 +79,7 @@ function Invoke-FileDownload {
             if (Test-Path $OutFile) { Remove-Item $OutFile -Force -ErrorAction SilentlyContinue }
             if ($curl) {
                 Write-Info "下载 $candidate"
-                & $curl -fsSL --tlsv1.2 --connect-timeout 10 --max-time 60 --retry 1 -o $OutFile $candidate
+                & $curl -fsSL --tlsv1.2 --connect-timeout 10 --max-time 180 --retry 1 -o $OutFile $candidate
                 if ($LASTEXITCODE -ne 0) { throw "curl 退出码 $LASTEXITCODE" }
             } else {
                 Write-Info "下载 $candidate (Invoke-WebRequest)"
@@ -120,7 +124,16 @@ function Get-TargetVersion {
     }
 }
 
-# 架构检测
+function Get-InstalledVersion {
+    $exe = Join-Path $InstallDir $BinaryName
+    if (-not (Test-Path $exe)) { return $null }
+    try {
+        $out = & $exe --version 2>&1 | Out-String
+        if ($out -match '(\d+\.\d+\.\d+)') { return $Matches[1] }
+    } catch {}
+    return $null
+}
+
 function Get-TargetArch {
     $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
     if ($arch -eq 'Arm64') {
@@ -140,6 +153,11 @@ function Download-Release {
 
     if (-not (Test-Path $DownloadDir)) {
         New-Item -ItemType Directory -Path $DownloadDir -Force | Out-Null
+    }
+
+    if ((Test-Path $dest) -and (Get-Item $dest).Length -gt 4000000) {
+        Write-Info "使用已下载文件: $dest"
+        return $dest
     }
 
     Write-Info "下载 $filename..."
@@ -239,6 +257,22 @@ function Main {
     $version = Get-TargetVersion -RequestedVersion $RequestedVersion
     $arch = Get-TargetArch
     Write-Info "平台: windows/$arch"
+
+    $installed = Get-InstalledVersion
+    if ($installed) {
+        Write-Info "检测到已安装: v$installed"
+        try {
+            if ([version]$installed -ge [version]$version) {
+                Write-Info "已是目标版本，跳过下载"
+                Configure-Path
+                Verify-Install
+                Write-Host ""
+                Write-Info "安装完成！运行 'uupt-open-cli --help' 开始使用"
+                Write-Host ""
+                return
+            }
+        } catch {}
+    }
 
     $archive = Download-Release -Version $version -Arch $arch
     Install-Release -ArchivePath $archive -Version $version
