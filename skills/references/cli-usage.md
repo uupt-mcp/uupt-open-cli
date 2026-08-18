@@ -67,6 +67,13 @@ $HOME/.uupt-open-cli/uupt-open-cli register --mobile="13800138000" --sms-code="1
 $HOME/.uupt-open-cli/uupt-open-cli register --mobile="13800138000" --image-code="5678"
 ```
 
+### 授权登录 / 状态 / 登出
+```bash
+$HOME/.uupt-open-cli/uupt-open-cli auth login
+$HOME/.uupt-open-cli/uupt-open-cli auth status
+$HOME/.uupt-open-cli/uupt-open-cli auth logout
+```
+
 ### 订单询价（跑腿配送）
 ```bash
 $HOME/.uupt-open-cli/uupt-open-cli price --from-address="郑州市金水区花园路1号" --to-address="郑州市二七区大学路100号" --city="郑州市"
@@ -148,6 +155,9 @@ $HOME/.uupt-open-cli/uupt-open-cli uninstall --force
 | --sms-code | 否 | 短信验证码（提交授权时使用） |
 | --image-code | 否 | 图片验证码（触发后需要） |
 | --ip | 否 | 公网IP（默认自动检测） |
+
+### auth login / status / logout
+无额外参数。`auth login` 会在本机 `127.0.0.1` 启动授权页并在 stdout 打印一行 `http://127.0.0.1:<port>/login`；授权成功或已登录时输出 `Logged in as ...`（退出码 0）。`auth status` 未登录时退出码为 1。`auth logout` 删除本地 openId，未登录时也正常返回。
 
 ### price
 | 参数 | 必填 | 说明 |

@@ -5,6 +5,7 @@ UU跑腿开放平台 CLI 工具 —— 为 AI 智能体提供同城即时配送�
 ## 功能
 
 - **register** — 手机号注册/获取授权
+- **auth** — 授权管理（login / status / logout，供 WorkBuddy 连接器调用）
 - **price** — 订单询价
 - **create** — 创建订单
 - **detail** — 查询订单详情
@@ -103,6 +104,11 @@ uupt-open-cli register --mobile="13800138000"
 
 # 注册（提交验证码）
 uupt-open-cli register --mobile="13800138000" --sms-code="123456"
+
+# 授权状态（WorkBuddy 连接器用）
+uupt-open-cli auth status
+uupt-open-cli auth login
+uupt-open-cli auth logout
 
 # 跑腿配送询价
 uupt-open-cli price --from-address="郑州市金水区花园路" --to-address="郑州市二七区大学路"

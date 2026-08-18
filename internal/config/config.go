@@ -109,6 +109,33 @@ func SaveConfig(updates map[string]string) error {
 	return os.WriteFile(configPath, out, 0644)
 }
 
+// ClearOpenId 删除本地用户授权（幂等：文件不存在或没有 openId 时不报错）
+func ClearOpenId() error {
+	configPath := filepath.Join(GetHomeDir(), "configs", "config.json")
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+
+	existing := make(map[string]string)
+	if err := json.Unmarshal(bytes.TrimPrefix(data, []byte("\xef\xbb\xbf")), &existing); err != nil {
+		return err
+	}
+	if _, ok := existing["openId"]; !ok {
+		return nil
+	}
+	delete(existing, "openId")
+
+	out, err := json.MarshalIndent(existing, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(configPath, out, 0644)
+}
+
 func EnsureConfig(needOpenId bool) *Config {
 	cfg, _ := LoadConfig()
 

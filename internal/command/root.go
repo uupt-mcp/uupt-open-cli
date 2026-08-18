@@ -26,15 +26,18 @@ var RootCmd = &cobra.Command{
 		}
 		if showList {
 			fmt.Println("支持的命令:")
-			fmt.Println("  register    手机号注册/获取授权")
-			fmt.Println("  price       订单询价")
-			fmt.Println("  create      创建订单")
-			fmt.Println("  detail      查询订单详情")
-			fmt.Println("  cancel      取消订单")
-			fmt.Println("  track       跑男实时追踪")
-			fmt.Println("  skill       管理 Agent Skill")
-			fmt.Println("  update      检查并更新到最新版本")
-			fmt.Println("  uninstall   卸载 uupt-open-cli")
+			fmt.Println("  register     手机号注册/获取授权")
+			fmt.Println("  auth login   浏览器授权登录（WorkBuddy 连接器用）")
+			fmt.Println("  auth status  检查授权状态")
+			fmt.Println("  auth logout  取消授权/登出")
+			fmt.Println("  price        订单询价")
+			fmt.Println("  create       创建订单")
+			fmt.Println("  detail       查询订单详情")
+			fmt.Println("  cancel       取消订单")
+			fmt.Println("  track        跑男实时追踪")
+			fmt.Println("  skill        管理 Agent Skill")
+			fmt.Println("  update       检查并更新到最新版本")
+			fmt.Println("  uninstall    卸载 uupt-open-cli")
 			return
 		}
 		cmd.Help()

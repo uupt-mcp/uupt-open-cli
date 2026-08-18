@@ -123,6 +123,30 @@ func TestSaveConfig_MergeWrite(t *testing.T) {
 	if result["appSecret"] != "secret1" {
 		t.Errorf("appSecret丢失或不正确: %s", result["appSecret"])
 	}
+
+	if err := SaveConfig(map[string]string{"openId": "oid-1"}); err != nil {
+		t.Fatalf("写入openId失败: %v", err)
+	}
+	if err := ClearOpenId(); err != nil {
+		t.Fatalf("ClearOpenId失败: %v", err)
+	}
+	data, err = os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("再次读取config.json失败: %v", err)
+	}
+	result = map[string]string{}
+	if err := json.Unmarshal(data, &result); err != nil {
+		t.Fatalf("再次解析config.json失败: %v", err)
+	}
+	if _, ok := result["openId"]; ok {
+		t.Errorf("ClearOpenId 后仍残留 openId: %v", result)
+	}
+	if result["appId"] != "id1" {
+		t.Errorf("ClearOpenId 不应删除其他字段")
+	}
+	if err := ClearOpenId(); err != nil {
+		t.Fatalf("重复 ClearOpenId 应幂等: %v", err)
+	}
 }
 
 func TestLoadConfig_FileNotExist(t *testing.T) {

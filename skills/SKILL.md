@@ -22,6 +22,9 @@ description: 当 AI 智能体需要调用 UU跑腿同城配送服务（注册、
 ## 已支持命令
 
 - `register` — 手机号注册/获取授权
+- `auth login` — 浏览器/本地页授权登录（WorkBuddy 连接器用）
+- `auth status` — 检查授权状态
+- `auth logout` — 取消授权
 - `price` — 订单询价（支持跑腿配送和帮忙服务）
 - `create` — 创建订单（支持跑腿配送和帮忙服务）
 - `detail` — 查询订单详情
@@ -45,6 +48,9 @@ $HOME/.uupt-open-cli/uupt-open-cli <command> [flags]
 | register | `$HOME/.uupt-open-cli/uupt-open-cli register --mobile="13800138000"` |
 | register(带验证码) | `$HOME/.uupt-open-cli/uupt-open-cli register --mobile="13800138000" --sms-code="123456"` |
 | register(带图片验证码) | `$HOME/.uupt-open-cli/uupt-open-cli register --mobile="13800138000" --image-code="1234"` |
+| auth login | `$HOME/.uupt-open-cli/uupt-open-cli auth login` |
+| auth status | `$HOME/.uupt-open-cli/uupt-open-cli auth status` |
+| auth logout | `$HOME/.uupt-open-cli/uupt-open-cli auth logout` |
 | price(跑腿配送) | `$HOME/.uupt-open-cli/uupt-open-cli price --from-address="郑州市金水区" --to-address="郑州市二七区"` |
 | price(帮忙服务) | `$HOME/.uupt-open-cli/uupt-open-cli price --from-address="郑州市金水区" --order-type="help"` |
 | create(跑腿配送) | `$HOME/.uupt-open-cli/uupt-open-cli create --price-token="xxx" --receiver-phone="13800138000"` |
