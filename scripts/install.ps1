@@ -47,16 +47,17 @@ function Get-DownloadUrls {
         $repo = $Matches[2]
         $rest = $Matches[3] -replace '^refs/heads/', ''
         $slash = $rest.IndexOf('/')
-        if ($slash -gt 0) {
-            $ref = $rest.Substring(0, $slash)
-            $path = $rest.Substring($slash + 1)
-            [void]$urls.Add("https://cdn.jsdelivr.net/gh/$owner/${repo}@${ref}/$path")
-        }
         [void]$urls.Add("$GithubProxyFast$Url")
         foreach ($proxy in $GithubProxyAlt) {
             [void]$urls.Add("$proxy$Url")
         }
         [void]$urls.Add($Url)
+        if ($slash -gt 0) {
+            $ref = $rest.Substring(0, $slash)
+            $path = $rest.Substring($slash + 1)
+            # jsDelivr 对 @main 有最长 12 小时缓存，latest 这类小文件放到最后，避免装到旧版。
+            [void]$urls.Add("https://cdn.jsdelivr.net/gh/$owner/${repo}@${ref}/$path")
+        }
         return $urls
     }
 
@@ -156,6 +157,13 @@ function Get-TargetVersion {
             Write-Err "无法获取最新版本号"
         }
         Write-Info "最新版本: v$version"
+        $minVersion = "1.0.4"
+        try {
+            if ([version]$version -lt [version]$minVersion) {
+                Write-Warn "检测到版本 v$version 过旧，改用 v$minVersion"
+                return $minVersion
+            }
+        } catch {}
         return $version
     } finally {
         if (Test-Path $tmp) { Remove-Item $tmp -Force -ErrorAction SilentlyContinue }

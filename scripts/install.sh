@@ -72,10 +72,10 @@ get_version() {
     info "获取最新版本..."
     VERSION=""
     for url in \
-      "https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/latest" \
       "${GITHUB_PROXY_FAST}${LATEST_VERSION_URL}" \
       "https://ghproxy.net/${LATEST_VERSION_URL}" \
-      "$LATEST_VERSION_URL"
+      "$LATEST_VERSION_URL" \
+      "https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/latest"
     do
       if command -v curl >/dev/null 2>&1; then
         VERSION=$(curl -fsSL --connect-timeout 10 --max-time 30 "$url" 2>/dev/null | tr -d '\n\r')
@@ -93,6 +93,11 @@ get_version() {
       error "无法获取最新版本号"
     fi
     info "最新版本: v${VERSION}"
+    MIN_VERSION="1.0.4"
+    if [ "$(printf '%s\n%s\n' "$VERSION" "$MIN_VERSION" | sort -t. -k1,1n -k2,2n -k3,3n | head -n1)" = "$VERSION" ] && [ "$VERSION" != "$MIN_VERSION" ]; then
+      warn "检测到版本 v${VERSION} 过旧，改用 v${MIN_VERSION}"
+      VERSION="$MIN_VERSION"
+    fi
   fi
 }
 
