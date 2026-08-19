@@ -104,3 +104,16 @@ func TestFetchIP_EmptyOrigin(t *testing.T) {
 		t.Errorf("空origin应返回空字符串，实际: %s", ip)
 	}
 }
+
+func TestFetchIP_PlainText(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("当前 IP：203.0.113.9 来自于：测试"))
+	}))
+	defer server.Close()
+
+	client := server.Client()
+	ip := fetchIP(client, server.URL, "")
+	if ip != "203.0.113.9" {
+		t.Errorf("期望从纯文本解析出 203.0.113.9，实际: %s", ip)
+	}
+}

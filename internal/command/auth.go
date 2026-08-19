@@ -87,13 +87,6 @@ func runAuthLogin(cmd *cobra.Command, args []string) {
 		os.Exit(0)
 	}
 
-	userIP := iputil.GetPublicIP()
-	if userIP == "" {
-		fmt.Fprintln(os.Stderr, "[ERROR] 无法检测公网 IP，请检查网络后重试")
-		os.Exit(1)
-	}
-	logger.Infof("auth login 检测到公网IP: %s", userIP)
-
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] 无法启动本地授权服务: %s\n", err.Error())
@@ -102,9 +95,20 @@ func runAuthLogin(cmd *cobra.Command, args []string) {
 	port := ln.Addr().(*net.TCPAddr).Port
 	loginURL := fmt.Sprintf("http://127.0.0.1:%d/login", port)
 
+	ipHolder := &publicIPHolder{}
+	go func() {
+		ip := iputil.GetPublicIP()
+		ipHolder.set(ip)
+		if ip != "" {
+			logger.Infof("auth login 检测到公网IP: %s", ip)
+		} else {
+			logger.Warnf("auth login 未能检测公网IP，将在发短信时重试")
+		}
+	}()
+
 	done := make(chan string, 1)
 	srv := &http.Server{
-		Handler:           newAuthMux(cfg, userIP, done),
+		Handler:           newAuthMux(cfg, ipHolder, done),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
@@ -114,6 +118,7 @@ func runAuthLogin(cmd *cobra.Command, args []string) {
 		}
 	}()
 
+	// WorkBuddy 要求 10 秒内打出授权 URL。公网 IP 探测在后台进行，不阻塞。
 	fmt.Println("Please visit the following URL to authenticate:")
 	fmt.Println(loginURL)
 	_ = os.Stdout.Sync()
@@ -151,7 +156,39 @@ type authAPIResponse struct {
 	OpenId    string `json:"openId,omitempty"`
 }
 
-func newAuthMux(cfg *config.Config, userIP string, done chan string) http.Handler {
+type publicIPHolder struct {
+	mu sync.Mutex
+	ip string
+}
+
+func (h *publicIPHolder) set(ip string) {
+	ip = strings.TrimSpace(ip)
+	if ip == "" {
+		return
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.ip == "" {
+		h.ip = ip
+	}
+}
+
+func (h *publicIPHolder) get() string {
+	h.mu.Lock()
+	if h.ip != "" {
+		ip := h.ip
+		h.mu.Unlock()
+		return ip
+	}
+	h.mu.Unlock()
+	ip := iputil.GetPublicIP()
+	h.set(ip)
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.ip
+}
+
+func newAuthMux(cfg *config.Config, ipHolder *publicIPHolder, done chan string) http.Handler {
 	mux := http.NewServeMux()
 	var once sync.Once
 
@@ -185,7 +222,11 @@ func newAuthMux(cfg *config.Config, userIP string, done chan string) http.Handle
 			writeJSON(w, http.StatusBadRequest, authAPIResponse{Message: "请输入 11 位中国大陆手机号"})
 			return
 		}
-
+		userIP := ipHolder.get()
+		if userIP == "" {
+			writeJSON(w, http.StatusBadRequest, authAPIResponse{Message: "无法检测公网 IP，请检查网络后重试"})
+			return
+		}
 		result, err := api.SendSmsCode(cfg, req.Mobile, userIP, strings.TrimSpace(req.ImageCode))
 		if err != nil {
 			writeJSON(w, http.StatusBadRequest, authAPIResponse{Message: err.Error()})
@@ -235,7 +276,11 @@ func newAuthMux(cfg *config.Config, userIP string, done chan string) http.Handle
 			writeJSON(w, http.StatusBadRequest, authAPIResponse{Message: "请填写手机号和短信验证码"})
 			return
 		}
-
+		userIP := ipHolder.get()
+		if userIP == "" {
+			writeJSON(w, http.StatusBadRequest, authAPIResponse{Message: "无法检测公网 IP，请检查网络后重试"})
+			return
+		}
 		result, err := api.Auth(cfg, req.Mobile, userIP, req.SmsCode)
 		if err != nil {
 			writeJSON(w, http.StatusBadRequest, authAPIResponse{Message: err.Error()})
