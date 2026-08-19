@@ -13,6 +13,9 @@
 #   UUPT_SKILLS_ROOT     — base path for agent dirs (default: $PWD)
 
 $ErrorActionPreference = "Stop"
+try {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+} catch {}
 
 $Repo = "uupt-mcp/uupt-open-cli"
 $Version = if ($env:UUPT_SKILLS_VERSION) { $env:UUPT_SKILLS_VERSION } else { "latest" }
@@ -52,7 +55,7 @@ function Resolve-SkillVersion {
     # 回退到 latest 文件
     if ($resolvedVersion -eq "latest") {
         try {
-            $ver = (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$Repo/refs/heads/main/latest" -UseBasicParsing).Content.Trim()
+            $ver = (Invoke-WebRequest -Uri "https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/latest" -UseBasicParsing).Content.Trim()
             if (-not [string]::IsNullOrWhiteSpace($ver)) { $resolvedVersion = $ver }
         } catch {}
     }
@@ -175,7 +178,28 @@ try {
     $zipPath = Join-Path $tmpDir "uupt-skills.zip"
 
     Write-Info "⬇  从 GitHub Releases 下载 skills: $Repo ($version)"
-    Invoke-WebRequest -Uri $assetUrl -OutFile $zipPath -UseBasicParsing
+    $candidates = @(
+        "https://ghfast.top/$assetUrl",
+        $assetUrl,
+        "https://ghproxy.net/$assetUrl",
+        "https://mirror.ghproxy.com/$assetUrl"
+    )
+    $downloaded = $false
+    foreach ($candidate in $candidates) {
+        try {
+            Write-Info "尝试 $candidate"
+            Invoke-WebRequest -Uri $candidate -OutFile $zipPath -UseBasicParsing
+            if ((Test-Path $zipPath) -and (Get-Item $zipPath).Length -gt 0) {
+                $downloaded = $true
+                break
+            }
+        } catch {
+            Write-Warn "失败: $($_.Exception.Message)"
+        }
+    }
+    if (-not $downloaded) {
+        Write-Err "下载 skills 失败"
+    }
 
     $extractDir = Join-Path $tmpDir "extracted"
     Expand-Archive -Path $zipPath -DestinationPath $extractDir -Force

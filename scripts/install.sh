@@ -4,9 +4,11 @@
 set -e
 
 # 核心变量
+# GitHub Release 加速代理。国内优先 ghfast.top，失败再直连和其它代理。
+GITHUB_PROXY_FAST="https://ghfast.top/"
 BASE_URL="https://github.com/uupt-mcp/uupt-open-cli/releases/download"
 LATEST_VERSION_URL="https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/refs/heads/main/latest"
-DOWNLOAD_DIR="$HOME/.uupt-open-cli/downloads"
+DOWNLOAD_DIR="${TMPDIR:-/tmp}/uupt-open-cli-downloads"
 INSTALL_DIR="$HOME/.uupt-open-cli"
 BINARY_NAME="uupt-open-cli"
 
@@ -71,7 +73,8 @@ get_version() {
     VERSION=""
     for url in \
       "https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/latest" \
-      "https://ghproxy.net/https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/refs/heads/main/latest" \
+      "${GITHUB_PROXY_FAST}${LATEST_VERSION_URL}" \
+      "https://ghproxy.net/${LATEST_VERSION_URL}" \
       "$LATEST_VERSION_URL"
     do
       if command -v curl >/dev/null 2>&1; then
@@ -102,30 +105,32 @@ download() {
   mkdir -p "$DOWNLOAD_DIR"
 
   info "下载 ${filename}..."
-  if command -v curl >/dev/null 2>&1; then
-    downloaded=0
-    for candidate in \
-      "https://ghfast.top/${url}" \
-      "$url" \
-      "https://ghproxy.net/${url}"
-    do
-      info "尝试 $candidate"
+  downloaded=0
+  for candidate in \
+    "${GITHUB_PROXY_FAST}${url}" \
+    "$url" \
+    "https://ghproxy.net/${url}" \
+    "https://mirror.ghproxy.com/${url}"
+  do
+    info "尝试 $candidate"
+    if command -v curl >/dev/null 2>&1; then
       if curl -fSL --connect-timeout 10 --max-time 180 --retry 1 \
         --speed-limit 20480 --speed-time 20 --progress-bar "$candidate" -o "$dest"; then
         downloaded=1
         break
       fi
-      warn "失败: $candidate"
-    done
-    if [ "$downloaded" -ne 1 ]; then
-      error "下载失败: $url"
+    elif command -v wget >/dev/null 2>&1; then
+      if wget --timeout=180 --progress=bar:force "$candidate" -O "$dest"; then
+        downloaded=1
+        break
+      fi
+    else
+      error "需要 curl 或 wget 来下载文件，请先安装其中之一"
     fi
-  elif command -v wget >/dev/null 2>&1; then
-    if ! wget --timeout=120 --progress=bar:force "$url" -O "$dest"; then
-      error "下载失败: $url"
-    fi
-  else
-    error "需要 curl 或 wget 来下载文件，请先安装其中之一"
+    warn "失败: $candidate"
+  done
+  if [ "$downloaded" -ne 1 ]; then
+    error "下载失败: $url"
   fi
 
   ARCHIVE_PATH="$dest"

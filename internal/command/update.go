@@ -7,20 +7,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"uupt-open-cli/internal/config"
 
 	"github.com/spf13/cobra"
-)
-
-const (
-	latestVersionURL = "https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/refs/heads/main/latest"
-	releaseBaseURL   = "https://github.com/uupt-mcp/uupt-open-cli/releases/download"
 )
 
 var updateCmd = &cobra.Command{
@@ -62,9 +57,10 @@ func runUpdate(cmd *cobra.Command, args []string) {
 		fmt.Printf("[ERROR] 更新失败: %s\n", err.Error())
 		fmt.Println("[提示] 可通过以下命令手动更新:")
 		if runtime.GOOS == "windows" {
-			fmt.Println("  irm https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install.ps1 | iex")
+			fmt.Println("  curl.exe -fsSL --tlsv1.2 -o $env:TEMP\\uupt-install.ps1 https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/scripts/install.ps1")
+			fmt.Println("  powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\\uupt-install.ps1")
 		} else {
-			fmt.Println("  curl -fsSL https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install.sh | bash")
+			fmt.Println("  curl -fsSL https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/scripts/install.sh | bash")
 		}
 		os.Exit(1)
 	}
@@ -73,27 +69,24 @@ func runUpdate(cmd *cobra.Command, args []string) {
 }
 
 func getLatestVersion() (string, error) {
-	resp, err := http.Get(latestVersionURL)
-	if err != nil {
-		return "", err
+	var lastErr error
+	for _, u := range latestVersionURLs() {
+		body, err := fetchURL(u, 20*time.Second)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		version := strings.TrimSpace(string(body))
+		if version == "" {
+			lastErr = fmt.Errorf("版本号为空")
+			continue
+		}
+		return version, nil
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("HTTP %d", resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	version := strings.TrimSpace(string(body))
-	if version == "" {
+	if lastErr == nil {
 		return "", fmt.Errorf("版本号为空")
 	}
-
-	return version, nil
+	return "", lastErr
 }
 
 func selfUpdate(version string) error {
@@ -108,7 +101,7 @@ func selfUpdate(version string) error {
 	archiveName := fmt.Sprintf("uupt-open-cli-%s-%s-%s.%s", version, platform, arch, archiveExt)
 	downloadURL := fmt.Sprintf("%s/v%s/%s", releaseBaseURL, version, archiveName)
 
-	// 下载压缩包
+	// 下载压缩包（优先 GitHub 加速代理）
 	fmt.Printf("[INFO] 下载 %s ...\n", archiveName)
 	tmpDir, err := os.MkdirTemp("", "uupt-update-*")
 	if err != nil {
@@ -117,7 +110,7 @@ func selfUpdate(version string) error {
 	defer os.RemoveAll(tmpDir)
 
 	archivePath := filepath.Join(tmpDir, archiveName)
-	if err := downloadFile(downloadURL, archivePath); err != nil {
+	if err := downloadFileWithFallback(githubReleaseURLs(downloadURL), archivePath); err != nil {
 		return fmt.Errorf("下载失败: %w", err)
 	}
 
@@ -215,27 +208,6 @@ func getPlatformInfo() (platform, arch, ext, archiveExt string) {
 	}
 
 	return
-}
-
-func downloadFile(url, dest string) error {
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("HTTP %d", resp.StatusCode)
-	}
-
-	f, err := os.Create(dest)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	_, err = io.Copy(f, resp.Body)
-	return err
 }
 
 func extractArchive(archivePath, destDir, archiveExt string) error {

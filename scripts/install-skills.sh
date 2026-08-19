@@ -33,8 +33,14 @@ resolve_version() {
     VERSION="$(curl -fsSI "https://github.com/${REPO}/releases/latest" 2>/dev/null \
       | grep -i '^location:' | sed 's|.*/tag/||;s/[[:space:]]*$//')"
     if [ -z "$VERSION" ]; then
+      VERSION="$(curl -fsSL --connect-timeout 10 --max-time 20 "https://cdn.jsdelivr.net/gh/uupt-mcp/uupt-open-cli@main/latest" 2>/dev/null | tr -d '\n\r')"
+    fi
+    if [ -z "$VERSION" ]; then
+      VERSION="$(curl -fsSL --connect-timeout 10 --max-time 20 "https://ghfast.top/https://raw.githubusercontent.com/${REPO}/refs/heads/main/latest" 2>/dev/null | tr -d '\n\r')"
+    fi
+    if [ -z "$VERSION" ]; then
       # 回退到 latest 文件
-      VERSION="$(curl -fsSL "https://raw.githubusercontent.com/${REPO}/refs/heads/main/latest" 2>/dev/null | tr -d '\n\r')"
+      VERSION="$(curl -fsSL --connect-timeout 10 --max-time 20 "https://raw.githubusercontent.com/${REPO}/refs/heads/main/latest" 2>/dev/null | tr -d '\n\r')"
     fi
     if [ -z "$VERSION" ]; then
       printf '❌ 无法确定最新版本，请设置 UUPT_SKILLS_VERSION 环境变量\n' >&2
@@ -174,7 +180,23 @@ main() {
 
   ASSET_URL="https://github.com/${REPO}/releases/download/${VERSION}/uupt-skills.zip"
   printf '  ⬇  从 GitHub Releases 下载 skills: %s (%s)\n' "$REPO" "$VERSION"
-  curl -fsSL "$ASSET_URL" -o "$TMPDIR_WORK/uupt-skills.zip"
+  downloaded=0
+  for candidate in \
+    "https://ghfast.top/${ASSET_URL}" \
+    "$ASSET_URL" \
+    "https://ghproxy.net/${ASSET_URL}" \
+    "https://mirror.ghproxy.com/${ASSET_URL}"
+  do
+    printf '     尝试 %s\n' "$candidate"
+    if curl -fsSL --connect-timeout 10 --max-time 120 "$candidate" -o "$TMPDIR_WORK/uupt-skills.zip"; then
+      downloaded=1
+      break
+    fi
+  done
+  if [ "$downloaded" -ne 1 ]; then
+    printf '  ❌ 下载 skills 失败\n' >&2
+    exit 1
+  fi
   extract_zip "$TMPDIR_WORK/uupt-skills.zip" "$TMPDIR_WORK/extracted"
 
   SKILL_SRC="$TMPDIR_WORK/extracted"

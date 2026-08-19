@@ -7,7 +7,12 @@ try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 } catch {}
 
-# 核心变量
+# GitHub Release 加速代理。国内优先 ghfast.top，失败再直连和其它代理。
+$GithubProxyFast = "https://ghfast.top/"
+$GithubProxyAlt = @(
+    "https://ghproxy.net/",
+    "https://mirror.ghproxy.com/"
+)
 $BaseUrl = "https://github.com/uupt-mcp/uupt-open-cli/releases/download"
 $LatestVersionUrl = "https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/refs/heads/main/latest"
 $InstallDir = "$env:USERPROFILE\.uupt-open-cli"
@@ -47,17 +52,20 @@ function Get-DownloadUrls {
             $path = $rest.Substring($slash + 1)
             [void]$urls.Add("https://cdn.jsdelivr.net/gh/$owner/${repo}@${ref}/$path")
         }
-        [void]$urls.Add("https://ghproxy.net/$Url")
+        [void]$urls.Add("$GithubProxyFast$Url")
+        foreach ($proxy in $GithubProxyAlt) {
+            [void]$urls.Add("$proxy$Url")
+        }
         [void]$urls.Add($Url)
         return $urls
     }
 
     if ($Url -like "https://github.com/*") {
-        # 国内实测 ghfast.top 明显快于 ghproxy；慢镜像放到后面并用低速中止。
-        [void]$urls.Add("https://ghfast.top/$Url")
+        [void]$urls.Add("$GithubProxyFast$Url")
         [void]$urls.Add($Url)
-        [void]$urls.Add("https://ghproxy.net/$Url")
-        [void]$urls.Add("https://mirror.ghproxy.com/$Url")
+        foreach ($proxy in $GithubProxyAlt) {
+            [void]$urls.Add("$proxy$Url")
+        }
         return $urls
     }
 

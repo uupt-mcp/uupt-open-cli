@@ -89,7 +89,7 @@ func runSkillInstall(cmd *cobra.Command, args []string) {
 	defer os.RemoveAll(tmpDir)
 
 	zipPath := filepath.Join(tmpDir, "uupt-skills.zip")
-	if err := downloadFile(assetURL, zipPath); err != nil {
+	if err := downloadFileWithFallback(githubReleaseURLs(assetURL), zipPath); err != nil {
 		fmt.Printf("[ERROR] 下载 skills 失败: %s\n", err.Error())
 		fmt.Println("[提示] 请检查网络连接或稍后重试")
 		os.Exit(1)
