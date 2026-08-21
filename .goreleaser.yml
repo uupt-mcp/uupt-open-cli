@@ -42,6 +42,7 @@ release:
   github:
     owner: uupt-mcp
     name: uupt-open-cli
+  mode: replace
 
 changelog:
   sort: asc

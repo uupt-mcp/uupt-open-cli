@@ -37,6 +37,43 @@ const loginPageHTML = `<!DOCTYPE html>
     .msg.ok { color: #1e9e4a; }
     .captcha { display: none; margin-top: 8px; }
     .captcha img { height: 42px; border-radius: 8px; background: #f6f6f6; }
+
+    .success-layer {
+      display: none;
+      position: fixed; inset: 0;
+      align-items: center; justify-content: center;
+      background: rgba(255, 244, 236, .72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 20;
+      padding: 24px;
+    }
+    body.is-success .card { filter: blur(6px); pointer-events: none; }
+    body.is-success .success-layer { display: flex; }
+    .success-card {
+      width: 92%; max-width: 400px; background: #fff; border-radius: 20px;
+      box-shadow: 0 16px 48px rgba(34, 34, 34, .08); padding: 40px 28px 28px;
+      text-align: center;
+    }
+    .success-icon {
+      width: 64px; height: 64px; margin: 0 auto 18px;
+    }
+    .success-card h2 {
+      margin: 0 0 10px; font-size: 22px; font-weight: 600; color: #222;
+    }
+    .success-card p.hint {
+      margin: 0 0 16px; font-size: 14px; color: #8a8a8a; line-height: 1.5;
+    }
+    .prompt {
+      margin: 0 auto 24px; padding: 12px 14px;
+      background: #fff7f0; border-radius: 10px;
+      border-left: 4px solid #ff5a00;
+      color: #5c3d2e; font-size: 14px; line-height: 1.55; text-align: left;
+    }
+    .success-card .ok {
+      min-width: 120px; height: 40px; border-radius: 20px;
+      background: #ff5a00; color: #fff; font-size: 15px; padding: 0 28px;
+    }
   </style>
 </head>
 <body>
@@ -62,6 +99,23 @@ const loginPageHTML = `<!DOCTYPE html>
     </div>
     <div class="msg" id="msg"></div>
   </div>
+  <div class="success-layer" id="successView">
+    <div class="success-card">
+      <svg class="success-icon" viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="34" r="22" fill="#fff4ec"/>
+        <path fill="#ff5a00" d="M22 35.2l6.2 6.2L43.2 26l2.8 2.7-17.8 18.2-9-9z"/>
+        <path fill="#ff8a3d" d="M44 8l2.2 6.2L52.4 16 46.2 18.2 44 24.4 41.8 18.2 35.6 16 41.8 14.2z"/>
+        <circle cx="14" cy="18" r="2.4" fill="#ffb080"/>
+        <circle cx="54" cy="28" r="2" fill="#ff7a33"/>
+        <circle cx="12" cy="42" r="1.6" fill="#ffd0b0"/>
+        <circle cx="52" cy="46" r="1.8" fill="#ff9a55"/>
+      </svg>
+      <h2>授权成功</h2>
+      <p class="hint">现在回到你的 AI 工具，试着对它说：</p>
+      <div class="prompt">「帮我从金水区花园路送到二七区德化街」</div>
+      <button class="ok" id="okBtn" type="button">好的</button>
+    </div>
+  </div>
   <script>
     const $ = (id) => document.getElementById(id);
     const msg = (text, ok) => { const el = $("msg"); el.textContent = text || ""; el.className = "msg" + (ok ? " ok" : ""); };
@@ -70,6 +124,10 @@ const loginPageHTML = `<!DOCTYPE html>
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || "请求失败");
       return data;
+    };
+    const showSuccess = () => {
+      document.body.classList.add("is-success");
+      document.title = "授权成功";
     };
     $("sendBtn").onclick = async () => {
       try {
@@ -89,11 +147,14 @@ const loginPageHTML = `<!DOCTYPE html>
     $("loginBtn").onclick = async () => {
       try {
         msg("");
-        const data = await post("/api/verify", { mobile: $("mobile").value.trim(), smsCode: $("smsCode").value.trim() });
-        msg("授权成功，可以关闭此页面返回 WorkBuddy", true);
+        await post("/api/verify", { mobile: $("mobile").value.trim(), smsCode: $("smsCode").value.trim() });
         $("loginBtn").disabled = true;
         $("sendBtn").disabled = true;
+        showSuccess();
       } catch (e) { msg(e.message); }
+    };
+    $("okBtn").onclick = () => {
+      window.close();
     };
   </script>
 </body>
