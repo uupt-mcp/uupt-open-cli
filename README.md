@@ -41,31 +41,31 @@ powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\uupt-install.ps1
 
 ```bash
 # Apple Silicon (M1/M2/M3)
-curl -LO https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.0.0-macos-arm64.tar.gz
-tar -xzf uupt-open-cli-1.0.0-macos-arm64.tar.gz
+curl -LO https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.1.0-macos-arm64.tar.gz
+tar -xzf uupt-open-cli-1.1.0-macos-arm64.tar.gz
 
 # Intel
-curl -LO https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.0.0-macos-amd64.tar.gz
-tar -xzf uupt-open-cli-1.0.0-macos-amd64.tar.gz
+curl -LO https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.1.0-macos-amd64.tar.gz
+tar -xzf uupt-open-cli-1.1.0-macos-amd64.tar.gz
 ```
 
 #### Linux
 
 ```bash
 # ARM64
-curl -LO https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.0.0-linux-arm64.tar.gz
-tar -xzf uupt-open-cli-1.0.0-linux-arm64.tar.gz
+curl -LO https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.1.0-linux-arm64.tar.gz
+tar -xzf uupt-open-cli-1.1.0-linux-arm64.tar.gz
 
 # AMD64
-curl -LO https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.0.0-linux-amd64.tar.gz
-tar -xzf uupt-open-cli-1.0.0-linux-amd64.tar.gz
+curl -LO https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.1.0-linux-amd64.tar.gz
+tar -xzf uupt-open-cli-1.1.0-linux-amd64.tar.gz
 ```
 
 #### Windows
 
-下载 [uupt-open-cli-1.0.0-windows-amd64.zip](https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.0.0-windows-amd64.zip) 并解压。
+下载 [uupt-open-cli-1.1.0-windows-amd64.zip](https://github.com/uupt-mcp/uupt-open-cli/releases/latest/download/uupt-open-cli-1.1.0-windows-amd64.zip) 并解压。
 
-> **注意：** 请将上述链接中的 `1.0.0` 替换为 [Releases 页面](https://github.com/uupt-mcp/uupt-open-cli/releases) 中的最新版本号。
+> **注意：** 请将上述链接中的 `1.1.0` 替换为 [Releases 页面](https://github.com/uupt-mcp/uupt-open-cli/releases) 中的最新版本号。
 
 解压后，将二进制文件移动到安装目录并配置 PATH：
 
@@ -190,7 +190,7 @@ irm https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/instal
 UUPT_SKILLS_ROOT=$HOME curl -fsSL https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install-skills.sh | sh
 
 # 指定版本
-UUPT_SKILLS_VERSION=v1.0.0 curl -fsSL https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install-skills.sh | sh
+UUPT_SKILLS_VERSION=v1.1.0 curl -fsSL https://raw.githubusercontent.com/uupt-mcp/uupt-open-cli/main/scripts/install-skills.sh | sh
 ```
 
 ### Skill 内容

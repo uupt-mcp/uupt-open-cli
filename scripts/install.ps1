@@ -157,7 +157,7 @@ function Get-TargetVersion {
             Write-Err "无法获取最新版本号"
         }
         Write-Info "最新版本: v$version"
-        $minVersion = "1.0.4"
+        $minVersion = "1.1.0"
         try {
             if ([version]$version -lt [version]$minVersion) {
                 Write-Warn "检测到版本 v$version 过旧，改用 v$minVersion"

@@ -93,7 +93,7 @@ get_version() {
       error "无法获取最新版本号"
     fi
     info "最新版本: v${VERSION}"
-    MIN_VERSION="1.0.4"
+    MIN_VERSION="1.1.0"
     if [ "$(printf '%s\n%s\n' "$VERSION" "$MIN_VERSION" | sort -t. -k1,1n -k2,2n -k3,3n | head -n1)" = "$VERSION" ] && [ "$VERSION" != "$MIN_VERSION" ]; then
       warn "检测到版本 v${VERSION} 过旧，改用 v${MIN_VERSION}"
       VERSION="$MIN_VERSION"
