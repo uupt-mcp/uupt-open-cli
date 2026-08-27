@@ -11,6 +11,7 @@ UU跑腿开放平台 CLI 工具 —— 为 AI 智能体提供同城即时配送�
 - **detail** — 查询订单详情
 - **cancel** — 取消订单
 - **track** — 跑男实时追踪
+- **coupon** — 领取优惠券
 - **skill** — 管理 Agent Skill（安装/卸载）
 - **update** — 检查并更新到最新版本
 - **uninstall** — 卸载 uupt-open-cli
@@ -131,6 +132,9 @@ uupt-open-cli cancel --order-code="UU123456789" --reason="不需要了"
 
 # 跑男追踪
 uupt-open-cli track --order-code="UU123456789"
+
+# 领取优惠券（每日可领，重复领取返回当日记录）
+uupt-open-cli coupon
 ```
 
 ### 订单类型

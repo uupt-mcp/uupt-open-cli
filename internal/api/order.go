@@ -25,7 +25,7 @@ func OrderPrice(cfg *config.Config, fromAddress string, toAddress string, city s
 		bizParams["goodsType"] = "ALLHELP"
 	}
 
-	return AuthorizedRequest(cfg, "order/orderPrice", bizParams)
+	return AuthorizedRequest(cfg, "/openapi/v3/order/orderPrice", bizParams)
 }
 
 // CreateOrder 创建订单
@@ -47,7 +47,7 @@ func CreateOrder(cfg *config.Config, priceToken string, receiverPhone string, ch
 		bizParams["note"] = note
 	}
 
-	return AuthorizedRequest(cfg, "order/addOrder", bizParams)
+	return AuthorizedRequest(cfg, "/openapi/v3/order/addOrder", bizParams)
 }
 
 // OrderDetail 查询订单详情
@@ -56,7 +56,7 @@ func OrderDetail(cfg *config.Config, orderCode string) (map[string]interface{}, 
 		"order_code": orderCode,
 	}
 
-	return AuthorizedRequest(cfg, "order/orderDetail", bizParams)
+	return AuthorizedRequest(cfg, "/openapi/v3/order/orderDetail", bizParams)
 }
 
 // CancelOrder 取消订单
@@ -68,5 +68,5 @@ func CancelOrder(cfg *config.Config, orderCode string, reason string) (map[strin
 		bizParams["reason"] = reason
 	}
 
-	return AuthorizedRequest(cfg, "order/cancelOrder", bizParams)
+	return AuthorizedRequest(cfg, "/openapi/v3/order/cancelOrder", bizParams)
 }

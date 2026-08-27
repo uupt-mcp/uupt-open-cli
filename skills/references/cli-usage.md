@@ -114,6 +114,11 @@ $HOME/.uupt-open-cli/uupt-open-cli cancel --order-code="UU123456789" --reason="�
 $HOME/.uupt-open-cli/uupt-open-cli track --order-code="UU123456789"
 ```
 
+### 领取优惠券（每日可领，重复领取返回当日记录）
+```bash
+$HOME/.uupt-open-cli/uupt-open-cli coupon
+```
+
 ### 更新版本
 ```bash
 $HOME/.uupt-open-cli/uupt-open-cli update
@@ -139,6 +144,7 @@ $HOME/.uupt-open-cli/uupt-open-cli uninstall --force
 | [REGISTRATION_SUCCESS] | 0 | openId值 | 注册成功 |
 | [REGISTRATION_FAILED] | 1 | 错误信息 | 注册失败 |
 | [PAYMENT_REQUIRED] | 0 | ORDER_CODE=, PAYMENT_URL=, QRCODE_FILE= | 余额不足需支付 |
+| [COUPON_RESULT] | 0 | NEWLY_CLAIMED=, COUPON_COUNT=，符合条件时附带 THURSDAY_JOIN_ABLE=, THURSDAY_QRCODE_URL=, THURSDAY_QRCODE_FILE= | 领券结果 |
 | [UPDATE_AVAILABLE] | 0 | JSON(current,latest) | 有新版本可更新 |
 | [FATAL] | 1 | 错误信息 | 致命配置错误 |
 | [INFO] | 0 | 信息文本 | 一般信息提示 |
@@ -190,6 +196,11 @@ $HOME/.uupt-open-cli/uupt-open-cli uninstall --force
 | 参数 | 必填 | 说明 |
 |------|------|------|
 | --order-code | 是 | 订单编号 |
+
+### coupon
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| --source | 否 | 领取来源（决定可领哪些券包，默认1） |
 
 ### uninstall
 | 参数 | 必填 | 说明 |

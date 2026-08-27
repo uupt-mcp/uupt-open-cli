@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"uupt-open-cli/internal/config"
 )
 
 func TestSignatureCompatibility_OrderPrice(t *testing.T) {
@@ -125,5 +127,29 @@ func TestJsonSortedKeys(t *testing.T) {
 	expected := `{"a_first":2,"m_mid":3,"z_last":1}`
 	if bizJson != expected {
 		t.Errorf("键排序不正确\n期望: %s\n实际: %s", expected, bizJson)
+	}
+}
+
+func TestBuildRequestURL(t *testing.T) {
+	cases := []struct {
+		name    string
+		apiUrl  string
+		apiPath string
+		want    string
+	}{
+		{"新基址全路径", "https://api-open.uupt.com", "/openapi/v3/order/orderPrice", "https://api-open.uupt.com/openapi/v3/order/orderPrice"},
+		{"新基址领券接口", "https://api-open.uupt.com", "/openapiext/v3/aiagentcoupon/receiveCouponPackages", "https://api-open.uupt.com/openapiext/v3/aiagentcoupon/receiveCouponPackages"},
+		{"旧配置带后缀兼容", "https://api-open.uupt.com/openapi/v3/", "/openapi/v3/order/orderPrice", "https://api-open.uupt.com/openapi/v3/order/orderPrice"},
+		{"相对路径兼容", "https://api-open.uupt.com", "order/orderPrice", "https://api-open.uupt.com/order/orderPrice"},
+		{"自定义基址带尾斜杠", "http://api-open.test.uupt.com/", "/openapi/v3/order/orderPrice", "http://api-open.test.uupt.com/openapi/v3/order/orderPrice"},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			cfg := &config.Config{ApiUrl: c.apiUrl}
+			if got := buildRequestURL(cfg, c.apiPath); got != c.want {
+				t.Errorf("期望: %s\n实际: %s", c.want, got)
+			}
+		})
 	}
 }

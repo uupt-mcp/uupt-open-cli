@@ -58,8 +58,20 @@ func UnauthorizedRequest(cfg *config.Config, apiPath string, bizParams map[strin
 	return doRequest(cfg, apiPath, body)
 }
 
+// buildRequestURL 构造请求完整 URL。
+// 基址默认为不带路径前缀的域名（如 https://api-open.uupt.com），接口路径在调用处写全；
+// 同时兼容旧配置中带 /openapi/v3/ 后缀的 apiUrl。
+func buildRequestURL(cfg *config.Config, apiPath string) string {
+	base := strings.TrimRight(cfg.ApiUrl, "/")
+	base = strings.TrimSuffix(base, "/openapi/v3")
+	if !strings.HasPrefix(apiPath, "/") {
+		apiPath = "/" + apiPath
+	}
+	return base + apiPath
+}
+
 func doRequest(cfg *config.Config, apiPath string, body map[string]interface{}) (map[string]interface{}, error) {
-	url := cfg.ApiUrl + apiPath
+	url := buildRequestURL(cfg, apiPath)
 
 	jsonBody, err := jsonAPI.Marshal(body)
 	if err != nil {

@@ -1,6 +1,6 @@
 ---
 name: uupt-open-cli
-description: 当 AI 智能体需要调用 UU跑腿同城配送服务（注册、询价、下单、查询、取消、跑男追踪）时使用本 skill
+description: 当 AI 智能体需要调用 UU跑腿同城配送服务（注册、询价、下单、查询、取消、跑男追踪、领取优惠券）时使用本 skill；用户说「领券」「领优惠券」「有优惠券吗」「有什么优惠」「有什么活动」「参加活动」时也应触发
 ---
 
 # UU跑腿开放平台 CLI
@@ -30,6 +30,7 @@ description: 当 AI 智能体需要调用 UU跑腿同城配送服务（注册、
 - `detail` — 查询订单详情
 - `cancel` — 取消订单
 - `track` — 跑男实时追踪
+- `coupon` — 领取优惠券（每日可领，符合条件时附主题活动入口）
 - `skill install` — 安装 Agent Skill 到智能体目录
 - `skill uninstall` — 卸载 Agent Skill
 - `update` — 检查并更新到最新版本
@@ -59,6 +60,7 @@ $HOME/.uupt-open-cli/uupt-open-cli <command> [flags]
 | detail | `$HOME/.uupt-open-cli/uupt-open-cli detail --order-code="UU123456789"` |
 | cancel | `$HOME/.uupt-open-cli/uupt-open-cli cancel --order-code="UU123456789" --reason="不需要了"` |
 | track | `$HOME/.uupt-open-cli/uupt-open-cli track --order-code="UU123456789"` |
+| coupon | `$HOME/.uupt-open-cli/uupt-open-cli coupon` |
 | update | `$HOME/.uupt-open-cli/uupt-open-cli update` |
 | uninstall | `$HOME/.uupt-open-cli/uupt-open-cli uninstall` |
 | uninstall(跳过确认) | `$HOME/.uupt-open-cli/uupt-open-cli uninstall --force` |
@@ -73,6 +75,7 @@ $HOME/.uupt-open-cli/uupt-open-cli <command> [flags]
 | `[REGISTRATION_SUCCESS]` | 注册成功 | 告知成功，继续执行原始请求 |
 | `[REGISTRATION_FAILED]` | 注册失败 | 从发送验证码步骤重试（最多3次） |
 | `[PAYMENT_REQUIRED]` | 余额不足需支付 | 提取 ORDER_CODE=、PAYMENT_URL=、QRCODE_FILE=，按渠道展示支付信息（微信发二维码图片，其他渠道发链接），并引导支付确认流程 |
+| `[COUPON_RESULT]` | 领券结果结构化标记 | 提取 NEWLY_CLAIMED=、COUPON_COUNT=，符合条件时还有 THURSDAY_JOIN_ABLE=true、THURSDAY_QRCODE_URL=、THURSDAY_QRCODE_FILE=，按场景六话术模板回复 |
 | `[UPDATE_AVAILABLE]` | 有新版本可更新 | 提示用户运行 update 命令或重新运行安装脚本 |
 | `[INFO]` | 信息提示 | 展示给用户参考 |
 | `[OK]` | 操作成功 | 告知用户操作完成 |
@@ -198,7 +201,63 @@ message(action=send, channel="wechat", path="{QRCODE_FILE}", message="请扫码�
 - 执行 track 命令
 - 展示骑手位置和预计到达信息
 
-### 场景六：卸载
+### 场景六：领取优惠券
+
+- **触发**：用户要领券或询问优惠（「领券」「领优惠券」「有优惠券吗」「有什么优惠」「有什么活动」「参加活动」），直接执行，无需额外信息；输出 `[REGISTRATION_REQUIRED]` 时先走场景零注册后重试
+- **命令**：`$HOME/.uupt-open-cli/uupt-open-cli coupon`（`--source` 领取来源，默认1，一般无需传入）
+- **返回字段**（JSON `body`）：
+
+| 字段 | 说明 |
+|------|------|
+| `newlyClaimed` | 是否本次新领取：true-本次新领取；false-今天已领过（返回当日记录） |
+| `couponList` | 领取的优惠券列表，每项含 `packageName`（券包名称，可为空）、`couponDetail`（优惠券信息）、`expireDate`（过期时间 yyyy-MM-dd） |
+| `thursdayJoinAble` | 是否可参与淡定星期四活动 |
+
+- **回复优先级**：`couponList` 为空或 null → 场景 C；`newlyClaimed=false` → 场景 B；其他 → 场景 A。任意场景下 `thursdayJoinAble=true` 时追加场景 D。回复严格按以下话术模板输出，不得改动任何标点、空行、换行位置，不得输出触发条件或任何 JSON 字段名
+
+#### 场景 A：领券成功（`newlyClaimed=true` 且 `couponList` 非空）
+
+```
+🎉 一键领券完成！本次共领取 N 张优惠券
+
+| 券名称 | 优惠券信息 | 过期时间 |
+|--------|---------|--------|
+| [packageName] | [couponDetail] | [expireDate] |
+
+可以在UU跑腿App优惠券列表查看所有券详情。
+```
+
+> N = couponList 条数；表格按 couponList 逐行输出；packageName 为空时填「优惠券」。
+
+#### 场景 B：当日已领过券（`newlyClaimed=false`）
+
+```
+您今天已经领过UU跑腿的优惠券啦，这是今日领取的优惠详情：
+
+| 券名称 | 优惠券信息 | 过期时间 |
+|--------|---------|--------|
+| [packageName] | [couponDetail] | [expireDate] |
+
+有新的优惠我第一时间通知你 🔔
+```
+
+#### 场景 C：无可领券（`couponList` 为空或 null）
+
+```
+当前UU跑腿暂无优惠券，有新券上线我第一时间通知你 🔔
+```
+
+#### 场景 D：淡定星期四活动（`thursdayJoinAble=true`，附加在上述任意场景回复之后）
+
+用户可参与淡定星期四（下单1元起活动）。命令会输出 `THURSDAY_QRCODE_URL`（远程图片链接）和 `THURSDAY_QRCODE_FILE`（本地图片路径，随 CLI 内嵌，始终可用）。在上述场景话术之后追加以下内容，**图片必须真实展示，不能只输出 URL/路径文本**：
+
+```
+另外你还可以参与「淡定星期四」活动，下单1元起！用微信扫描下方二维码即可参与 👇
+```
+
+图片展示方式按当前平台能力选择：支持远程 Markdown 图片渲染的平台用 `![淡定星期四活动](THURSDAY_QRCODE_URL)`；不渲染远程链接但有本地图片发送机制的平台（如 `present_files`/`send_file`）直接发送 `THURSDAY_QRCODE_FILE`；两者都不可用时输出活动说明文字 + 可点击的 `THURSDAY_QRCODE_URL` 链接，引导用户微信自行打开。
+
+### 场景七：卸载
 
 - 执行 uninstall 命令
 - 确认卸载（除非使用 --force 跳过确认）
@@ -216,3 +275,4 @@ message(action=send, channel="wechat", path="{QRCODE_FILE}", message="请扫码�
 - 微信渠道创建订单时必须传递 `--channel="wechat"` 参数以生成支付二维码图片
 - 帮忙订单询价时使用 `--order-type="help"`，起始地址和终点地址自动保持一致
 - 帮忙订单创建时必须传递 `--note` 参数描述具体帮忙内容
+- 领取优惠券需先完成注册；同一用户同一来源当天只能新领一次，重复领取返回当日记录（`newlyClaimed=false`）；回复严格按场景六话术模板输出；`thursdayJoinAble=true` 时必须真实展示活动二维码图片

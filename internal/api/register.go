@@ -14,7 +14,7 @@ func SendSmsCode(cfg *config.Config, mobile string, ip string, imageCode string)
 		bizParams["imageCode"] = imageCode
 	}
 
-	return UnauthorizedRequest(cfg, "user/unauthorized/sendSmsCode", bizParams)
+	return UnauthorizedRequest(cfg, "/openapi/v3/user/unauthorized/sendSmsCode", bizParams)
 }
 
 // Auth 完成授权获取openId
@@ -27,5 +27,5 @@ func Auth(cfg *config.Config, mobile string, ip string, smsCode string) (map[str
 		"countyName": "",
 	}
 
-	return UnauthorizedRequest(cfg, "user/unauthorized/auth", bizParams)
+	return UnauthorizedRequest(cfg, "/openapi/v3/user/unauthorized/auth", bizParams)
 }

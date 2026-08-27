@@ -10,5 +10,5 @@ func DriverTrack(cfg *config.Config, orderCode string) (map[string]interface{}, 
 		"order_code": orderCode,
 	}
 
-	return AuthorizedRequest(cfg, "order/driverTrack", bizParams)
+	return AuthorizedRequest(cfg, "/openapi/v3/order/driverTrack", bizParams)
 }

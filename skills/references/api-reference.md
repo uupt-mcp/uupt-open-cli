@@ -6,6 +6,7 @@
 - HTTP POST
 - Content-Type: application/json
 - Header: X-App-Id
+- 基址：`https://api-open.uupt.com`（业务接口路径前缀 `/openapi/v3/`，领券接口前缀 `/openapiext/v3/`，均写全在接口路径中）
 
 ### 签名算法
 1. 将业务参数序列化为紧凑JSON（中文原字符，无多余空格）
@@ -39,7 +40,7 @@
 
 ### 步骤一：发送短信验证码
 
-**路径**：`user/unauthorized/sendSmsCode`
+**路径**：`/openapi/v3/user/unauthorized/sendSmsCode`
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
@@ -53,7 +54,7 @@
 
 ### 步骤二：完成授权
 
-**路径**：`user/unauthorized/auth`
+**路径**：`/openapi/v3/user/unauthorized/auth`
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
@@ -71,7 +72,7 @@
 
 ## orderPrice 订单询价
 
-**路径**：`order/orderPrice`
+**路径**：`/openapi/v3/order/orderPrice`
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
@@ -95,7 +96,7 @@
 
 ## addOrder 创建订单
 
-**路径**：`order/addOrder`
+**路径**：`/openapi/v3/order/addOrder`
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
@@ -124,7 +125,7 @@
 
 ## orderDetail 查询订单详情
 
-**路径**：`order/orderDetail`
+**路径**：`/openapi/v3/order/orderDetail`
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
@@ -159,7 +160,7 @@
 
 ## cancelOrder 取消订单
 
-**路径**：`order/cancelOrder`
+**路径**：`/openapi/v3/order/cancelOrder`
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
@@ -172,7 +173,7 @@
 
 ## driverTrack 跑男追踪
 
-**路径**：`order/driverTrack`
+**路径**：`/openapi/v3/order/driverTrack`
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
@@ -187,6 +188,26 @@
 | body.longitude | 经度 |
 | body.latitude | 纬度 |
 | body.distance | 到终点距离（米） |
+
+---
+
+## receiveCouponPackages 领取优惠券包
+
+**路径**：`/openapiext/v3/aiagentcoupon/receiveCouponPackages`
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| source | int | 是 | 领取来源（决定可领哪些券包，默认1） |
+
+**响应关键字段**：
+
+| 字段 | 说明 |
+|------|------|
+| body.newlyClaimed | 是否本次新领取：true-本次新领取；false-今天已领过（返回当日记录） |
+| body.couponList | 优惠券列表，每项含 `packageName`（可为空）、`couponDetail`、`expireDate`（yyyy-MM-dd） |
+| body.thursdayJoinAble | 是否可参与淡定星期四活动 |
+
+**CLI 额外输出**（命令 `coupon`）：`[COUPON_RESULT]` 标记，后跟 `NEWLY_CLAIMED=`、`COUPON_COUNT=`；`thursdayJoinAble=true` 时额外输出 `THURSDAY_JOIN_ABLE=true`、`THURSDAY_QRCODE_URL=`（活动太阳码远程图片链接）和 `THURSDAY_QRCODE_FILE=`（本地图片路径，图片随二进制内嵌，始终可用）。
 
 ---
 
@@ -217,6 +238,7 @@
 | [REGISTRATION_SUCCESS] | 注册成功（附带 openId） |
 | [REGISTRATION_FAILED] | 注册失败 |
 | [PAYMENT_REQUIRED] | 余额不足需支付（附带 ORDER_CODE=、PAYMENT_URL=、QRCODE_FILE=） |
+| [COUPON_RESULT] | 领券结果（附带 NEWLY_CLAIMED=、COUPON_COUNT=，符合条件时附带 THURSDAY_JOIN_ABLE=、THURSDAY_QRCODE_URL=、THURSDAY_QRCODE_FILE=） |
 | [UPDATE_AVAILABLE] | 有新版本可更新（附带 JSON: {"current":"...","latest":"..."}） |
 | [FATAL] | 致命配置错误 |
 | [INFO] | 一般信息提示 |
